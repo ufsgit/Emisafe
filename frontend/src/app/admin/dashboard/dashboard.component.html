@@ -1,0 +1,233 @@
+<div class="dashboard-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-actions">
+      <a routerLink="/admin/certificates" class="btn btn-primary btn-sm">
+        <span class="material-symbols-outlined">add</span>
+        Issue Certificate
+      </a>
+    </div>
+  </div>
+
+  <!-- Metric Summary Cards -->
+  <div class="metrics-grid">
+    <div class="metric-card accent-navy">
+      <div class="metric-top">
+        <div class="metric-icon-box bg-navy">
+          <span class="material-symbols-outlined">badge</span>
+        </div>
+        <div class="metric-info">
+          <span class="metric-label">Total Employees</span>
+          <div class="metric-value">{{ kpiEmployees() }}</div>
+        </div>
+      </div>
+      <div class="metric-foot">
+        <span class="foot-dot"></span>
+        <span><strong>{{ summary()?.activeEmployees || 0 }}</strong> active &middot; <strong>{{ inactiveEmployees() }}</strong> inactive</span>
+      </div>
+    </div>
+
+    <div class="metric-card accent-blue">
+      <div class="metric-top">
+        <div class="metric-icon-box bg-navy-light">
+          <span class="material-symbols-outlined">workspace_premium</span>
+        </div>
+        <div class="metric-info">
+          <span class="metric-label">Total Certificates</span>
+          <div class="metric-value">{{ kpiCertificates() }}</div>
+        </div>
+      </div>
+      <div class="metric-foot">
+        <span class="foot-dot"></span>
+        <span><strong>{{ summary()?.passCount || 0 }}</strong> pass &middot; <strong>{{ summary()?.failCount || 0 }}</strong> fail</span>
+      </div>
+    </div>
+
+    <div class="metric-card accent-green">
+      <div class="metric-top">
+        <div class="metric-icon-box bg-green">
+          <span class="material-symbols-outlined">check_circle</span>
+        </div>
+        <div class="metric-info">
+          <span class="metric-label">Active (Valid)</span>
+          <div class="metric-value">{{ kpiValid() }}</div>
+        </div>
+      </div>
+      <div class="metric-foot">
+        <span class="foot-dot"></span>
+        <span><strong>{{ summary()?.expiringSoonCount || 0 }}</strong> expiring within 30 days</span>
+      </div>
+    </div>
+
+    <div class="metric-card accent-red">
+      <div class="metric-top">
+        <div class="metric-icon-box bg-red">
+          <span class="material-symbols-outlined">event_busy</span>
+        </div>
+        <div class="metric-info">
+          <span class="metric-label">Expired</span>
+          <div class="metric-value">{{ kpiExpired() }}</div>
+        </div>
+      </div>
+      <div class="metric-foot">
+        <span class="foot-dot"></span>
+        <span><strong>{{ expiredPct() }}%</strong> of certificates</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts & Lists Layout -->
+  <div class="dashboard-grid">
+    <!-- Chart Card: Certificates Issued (line + area) -->
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <div class="card-title-group">
+          <span class="material-symbols-outlined">show_chart</span>
+          <h2 class="card-title">Certificates Issued</h2>
+        </div>
+        <span class="badge badge-info">3 Years</span>
+      </div>
+      <div class="chart-container">
+        <canvas #issuedChart></canvas>
+      </div>
+      <div class="chart-footnote">
+        {{ issuedTotal() }} issued in the last 3 years
+      </div>
+    </div>
+
+    <!-- Chart Card: Pass vs Fail Donut -->
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <div class="card-title-group">
+          <span class="material-symbols-outlined">donut_large</span>
+          <h2 class="card-title">Pass / Fail Ratio</h2>
+        </div>
+        <span class="badge badge-info">{{ summary()?.totalCertificates || 0 }} Total</span>
+      </div>
+      <div class="chart-container">
+        <canvas #passFailChart></canvas>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item">
+          <span class="legend-dot bg-green"></span>
+          <span class="legend-label">Pass</span>
+          <strong class="legend-value">{{ summary()?.passCount || 0 }}</strong>
+          <span class="legend-pct text-green">{{ pct(summary()?.passCount, summary()?.totalCertificates) }}</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot bg-red"></span>
+          <span class="legend-label">Fail</span>
+          <strong class="legend-value">{{ summary()?.failCount || 0 }}</strong>
+          <span class="legend-pct text-red">{{ pct(summary()?.failCount, summary()?.totalCertificates) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart Card: Valid vs Expired Status -->
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <div class="card-title-group">
+          <span class="material-symbols-outlined">donut_small</span>
+          <h2 class="card-title">Validity Status</h2>
+        </div>
+        <span class="badge badge-info">{{ pct(summary()?.validCount, summary()?.totalCertificates) }} Valid</span>
+      </div>
+      <div class="chart-container">
+        <canvas #validityChart></canvas>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item">
+          <span class="legend-dot bg-navy"></span>
+          <span class="legend-label">Valid</span>
+          <strong class="legend-value">{{ summary()?.validCount || 0 }}</strong>
+          <span class="legend-pct text-navy">{{ pct(summary()?.validCount, summary()?.totalCertificates) }}</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot bg-red"></span>
+          <span class="legend-label">Expired</span>
+          <strong class="legend-value">{{ summary()?.expiredCount || 0 }}</strong>
+          <span class="legend-pct text-red">{{ pct(summary()?.expiredCount, summary()?.totalCertificates) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart Card: Certificates by Type (horizontal bar) -->
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <div class="card-title-group">
+          <span class="material-symbols-outlined">category</span>
+          <h2 class="card-title">By Type</h2>
+        </div>
+        <span class="badge badge-info">{{ byType().length }} Types</span>
+      </div>
+      <div class="chart-container">
+        <canvas #typeChart></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Certificates Expiring Soon Table -->
+  <div class="dash-card mt-6">
+    <div class="dash-card-header">
+      <div class="card-title-group">
+        <span class="material-symbols-outlined text-yellow">warning</span>
+        <h2 class="card-title">Expiring Soon (30 Days)</h2>
+      </div>
+      <a routerLink="/admin/certificates" [queryParams]="{ validity: 'expiring_soon' }" class="btn btn-outline btn-sm">
+        View All
+      </a>
+    </div>
+
+    @if (expiringSoon().length === 0) {
+      <div class="empty-state">
+        <span class="material-symbols-outlined empty-icon">check_circle</span>
+        <h4>No certificates expiring soon</h4>
+      </div>
+    } @else {
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Certificate #</th>
+              <th>Employee Name</th>
+              <th>Emirates ID</th>
+              <th>Certificate Type</th>
+              <th>Expiry Date</th>
+              <th>Days Left</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (cert of expiringSoon(); track cert.id) {
+              <tr>
+                <td>
+                  <span class="font-mono font-bold">{{ cert.certificate_number }}</span>
+                </td>
+                <td>
+                  <strong>{{ cert.employee_name }}</strong>
+                </td>
+                <td>
+                  <span class="font-mono text-muted">{{ cert.employee_emirates_id }}</span>
+                </td>
+                <td>{{ cert.certificate_type_name }}</td>
+                <td>
+                  <span class="text-red font-bold">{{ cert.expiry_date | date:'dd MMM yyyy' }}</span>
+                </td>
+                <td>
+                  <span class="badge badge-expiring">
+                    {{ cert.days_remaining }} days
+                  </span>
+                </td>
+                <td>
+                  <a [routerLink]="['/admin/certificates']" [queryParams]="{ search: cert.certificate_number }" class="btn btn-outline btn-sm">
+                    View
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

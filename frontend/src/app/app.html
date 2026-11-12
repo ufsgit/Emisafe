@@ -1,0 +1,13 @@
+<router-outlet></router-outlet>
+
+<!-- Global Toast Container -->
+<div class="toast-container">
+  @for (toast of toasts(); track toast.id) {
+    <div class="toast" [ngClass]="'toast-' + toast.type">
+      <span class="material-symbols-outlined toast-icon">
+        {{ toast.type === 'success' ? 'check_circle' : toast.type === 'error' ? 'error' : 'info' }}
+      </span>
+      <span>{{ toast.message }}</span>
+    </div>
+  }
+</div>

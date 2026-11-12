@@ -1,0 +1,286 @@
+<div class="public-page-wrapper">
+  <!-- Unified Hero Wrapper with continuous Box Grid Pattern -->
+  <div class="hero-wrapper">
+    <!-- Top Navigation Header -->
+    <header class="public-header">
+      <div class="header-container">
+        <div class="logo-container">
+          <a routerLink="/" class="logo-link">
+            <img src="/assets/logo/logo-white.svg" alt="EmiSafe" width="56" height="56" class="header-logo" priority />
+          </a>
+        </div>
+        <div class="header-actions">
+          <a routerLink="/admin/login" class="btn-admin-nav">
+            <span class="material-symbols-outlined">admin_panel_settings</span>
+            Admin Portal
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero & Verification Search Section -->
+    <section class="hero-section">
+      <div class="hero-container">
+        <span class="hero-eyebrow">
+          <span class="material-symbols-outlined">verified_user</span>
+          Official Verification Portal
+        </span>
+
+        <h1 class="hero-title">Verify a <em>Certificate</em></h1>
+
+        <p class="hero-subtitle">
+          Confirm the authenticity, validity and status of any EmiSafe-issued
+          workplace safety credential — instantly and securely.
+        </p>
+
+        <!-- Search Card -->
+        <div class="search-card">
+          <form (ngSubmit)="onSearch()" class="search-form">
+            <div class="search-input-group">
+              <span class="material-symbols-outlined search-icon">search</span>
+              <input type="text" name="certificateNumber" [(ngModel)]="searchQuery"
+                placeholder="Enter certificate number, e.g. CERT-2026-08912" class="search-input" required
+                autocomplete="off" spellcheck="false" />
+              <div class="search-actions">
+                <button type="button" class="btn-scan-qr" (click)="startQrScan()" title="Scan QR Code with Camera">
+                  <span class="material-symbols-outlined">qr_code_scanner</span>
+                  <span class="scan-label">Scan QR</span>
+                </button>
+                <button type="submit" class="btn btn-primary btn-verify"
+                  [disabled]="isLoading() || !searchQuery.trim()">
+                  @if (isLoading()) {
+                  <span class="spinner"></span>
+                  <span>Verifying</span>
+                  } @else {
+                  <span>Verify</span>
+                  <span class="material-symbols-outlined">arrow_forward</span>
+                  }
+                </button>
+              </div>
+            </div>
+            @if (inputError()) {
+            <div class="input-error-text">{{ inputError() }}</div>
+            }
+          </form>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Verification Results Area (SSR-rendered into initial HTML) -->
+  <main class="public-content">
+    <section class="results-section">
+      <div class="results-container">
+
+        <!-- Loading Skeleton (client transition) -->
+        @if (isLoading()) {
+        <div class="loading-state">
+          <div class="skeleton-pill"></div>
+          <div class="skeleton-header"></div>
+          <div class="skeleton-grid">
+            <div class="skeleton-box"></div>
+            <div class="skeleton-box"></div>
+            <div class="skeleton-box"></div>
+          </div>
+        </div>
+        }
+
+        <!-- Invalid / Not Found State -->
+        @if (!isLoading() && hasSearched() && notFound()) {
+        <div class="result-card error-card">
+          <div class="error-icon-wrapper">
+            <span class="material-symbols-outlined error-icon">cancel</span>
+          </div>
+          <div class="error-content">
+            <h2 class="error-title">Invalid / Certificate not found</h2>
+            <p class="error-desc">
+              No certificate matches <strong>"{{ searchedCertificateNumber() }}"</strong>. Please verify the certificate
+              number printed on the issued credential and try again.
+            </p>
+          </div>
+        </div>
+        }
+
+        <!-- Error State (API Unreachable) -->
+        @if (!isLoading() && apiError()) {
+        <div class="result-card error-card">
+          <div class="error-icon-wrapper">
+            <span class="material-symbols-outlined error-icon">error_outline</span>
+          </div>
+          <div class="error-content">
+            <h2 class="error-title">Something went wrong</h2>
+            <p class="error-desc">
+              The verification service is temporarily unavailable. Please try again shortly.
+            </p>
+          </div>
+        </div>
+        }
+
+        <!-- Successful Verification Result Card -->
+        @if (!isLoading() && result(); as res) {
+        <div class="result-card success-card">
+          <!-- Top Status Bar Banner -->
+          <div class="card-status-banner"
+            [ngClass]="'status-' + res.certificate.validity_status.toLowerCase().replace(' ', '-')">
+            <div class="banner-left">
+              <span class="material-symbols-outlined status-symbol">
+                {{ res.certificate.is_valid ? 'verified' : 'highlight_off' }}
+              </span>
+              <div>
+                <div class="banner-title">Credential Verification Result</div>
+                <div class="banner-cert-num">{{ res.certificate.certificate_number }}</div>
+              </div>
+            </div>
+            <div class="banner-right">
+              <span class="badge"
+                [ngClass]="'badge-' + res.certificate.validity_status.toLowerCase().replace(' ', '-')">
+                <span class="badge-dot"></span>
+                {{ res.certificate.validity_status }}
+              </span>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Section 1: Employee Information -->
+            <div class="info-section">
+              <h3 class="section-title">
+                <span class="material-symbols-outlined">person</span>
+                Employee Information
+              </h3>
+              <div class="info-grid employee-grid">
+                <div class="info-item">
+                  <span class="item-label">Employee Name</span>
+                  <span class="item-value highlight-value">{{ res.employee.name }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="item-label">Emirates ID (Masked)</span>
+                  <span class="item-value font-mono">{{ res.employee.emirates_id_masked }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="item-label">Job Title / Designation</span>
+                  <span class="item-value">{{ res.employee.job_title }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Section 2: Certificate Information -->
+            <div class="info-section">
+              <h3 class="section-title">
+                <span class="material-symbols-outlined">workspace_premium</span>
+                Certificate Information
+              </h3>
+              <div class="info-grid cert-grid">
+                <div class="info-item full-width">
+                  <span class="item-label">Certificate Type</span>
+                  <span class="item-value cert-name-value">{{ res.certificate.certificate_type }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="item-label">Certificate Number</span>
+                  <span class="item-value font-mono">{{ res.certificate.certificate_number }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="item-label">Examination Status</span>
+                  <span class="badge"
+                    [ngClass]="res.certificate.certificate_status === 'Pass' ? 'badge-pass' : 'badge-fail'">
+                    {{ res.certificate.certificate_status }}
+                  </span>
+                </div>
+                <div class="info-item">
+                  <span class="item-label">Issue Date</span>
+                  <span class="item-value">{{ res.certificate.issue_date | date:'dd MMM yyyy' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="item-label">Expiry Date</span>
+                  <span class="item-value font-bold" [class.text-red]="!res.certificate.is_valid">
+                    {{ res.certificate.expiry_date | date:'dd MMM yyyy' }}
+                  </span>
+                </div>
+                @if (res.certificate.description) {
+                <div class="info-item full-width">
+                  <span class="item-label">Description</span>
+                  <span class="item-value text-desc">{{ res.certificate.description }}</span>
+                </div>
+                }
+                @if (res.certificate.scope) {
+                <div class="info-item full-width">
+                  <span class="item-label">Scope</span>
+                  <span class="item-value text-desc">{{ res.certificate.scope }}</span>
+                </div>
+                }
+              </div>
+            </div>
+
+            <!-- Section 3: Official Verification QR Code -->
+            @if (qrCodeDataUrl()) {
+            <div class="section-divider"></div>
+            <div class="qr-verify-block">
+              <div class="qr-code-wrapper">
+                <img [src]="qrCodeDataUrl()" alt="Verified Certificate QR Code" class="qr-code-image" />
+              </div>
+              <div class="qr-info-content">
+                <div class="qr-badge-pill">
+                  <span class="material-symbols-outlined">qr_code_2</span>
+                  <span>Official Verification QR</span>
+                </div>
+                <h4 class="qr-heading">Scan to Verify Authenticity</h4>
+                <p class="qr-description">
+                  Scan this QR code with any mobile device or inspection tool to instantly view this live certificate
+                  status.
+                </p>
+                <div class="qr-url-box font-mono">
+                  {{ currentVerifyUrl() }}
+                </div>
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+        }
+
+      </div>
+    </section>
+  </main>
+
+  <!-- QR Scanner Camera Modal -->
+  @if (showScanner()) {
+  <div class="scanner-modal-backdrop" (click)="stopQrScan()">
+    <div class="scanner-modal-card" (click)="$event.stopPropagation()">
+      <div class="scanner-modal-header">
+        <div class="scanner-title-wrap">
+          <span class="material-symbols-outlined scanner-header-icon">qr_code_scanner</span>
+          <div>
+            <h3 class="scanner-title">Scan Certificate QR Code</h3>
+            <p class="scanner-subtitle">Point your camera at the certificate QR code</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close-scanner" (click)="stopQrScan()" title="Close scanner">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="scanner-modal-body">
+        <div id="qr-reader"></div>
+        @if (scannerError()) {
+        <div class="scanner-error-banner">
+          <span class="material-symbols-outlined">error</span>
+          <span>{{ scannerError() }}</span>
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Minimal Public Footer -->
+  <footer class="public-footer">
+    <div class="footer-container">
+      <div class="footer-logo-block">
+        <img src="/assets/logo/logo-white.svg" alt="EmiSafe Logo" width="40" height="40" class="footer-logo" />
+        <p class="footer-copy">
+          &copy; {{ currentYear }} EmiSafe. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </footer>
+</div>

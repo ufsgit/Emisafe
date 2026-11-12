@@ -1,0 +1,126 @@
+<div class="admin-wrapper">
+
+  <!-- ================= TOP NAVBAR ================= -->
+  <header class="admin-navbar">
+    <div class="nav-container">
+
+      <!-- Brand -->
+      <div class="nav-brand">
+        <a routerLink="/admin/dashboard" class="brand-link">
+          <img src="/assets/logo/logo-white.svg" alt="EmiSafe" class="brand-logo" width="56" height="56" />
+        </a>
+
+        <button class="mobile-toggle" (click)="toggleMobileMenu()" aria-label="Toggle navigation">
+          <span class="material-symbols-outlined">{{ isMobileMenuOpen ? 'close' : 'menu' }}</span>
+        </button>
+      </div>
+
+      <!-- Center nav -->
+      <nav class="nav-links" [class.mobile-open]="isMobileMenuOpen">
+        <span class="nav-glow" aria-hidden="true"></span>
+
+        @for (item of navItems; track item.link; let idx = $index) {
+          <a
+            [routerLink]="item.link"
+            [routerLinkActiveOptions]="{ exact: !!item.exact }"
+            routerLinkActive="active"
+            class="nav-tab"
+            [style.--i]="idx"
+            (click)="closeMobileMenu()"
+          >
+            <span class="material-symbols-outlined nav-icon">{{ item.icon }}</span>
+            <span class="nav-text">{{ item.label }}</span>
+            <span class="nav-ripple" aria-hidden="true"></span>
+          </a>
+        }
+
+        <a routerLink="/" target="_blank" class="nav-tab nav-external" (click)="closeMobileMenu()">
+          <span class="material-symbols-outlined nav-icon">open_in_new</span>
+          <span class="nav-text">Public Portal</span>
+          <span class="nav-ripple" aria-hidden="true"></span>
+        </a>
+      </nav>
+
+      <!-- Right: user dropdown -->
+      <div class="nav-actions">
+        <div class="user-menu">
+          <button
+            #userMenuButton
+            class="user-trigger"
+            (click)="toggleUserMenu($event)"
+            [class.open]="isUserMenuOpen"
+            [attr.aria-expanded]="isUserMenuOpen"
+            aria-haspopup="menu"
+          >
+            <span class="user-avatar">
+              {{ (currentUser()?.name || 'A').charAt(0) | uppercase }}
+              <span class="avatar-status" aria-hidden="true"></span>
+            </span>
+            <span class="user-meta">
+              <span class="user-name">{{ currentUser()?.name || 'Administrator' }}</span>
+              <span class="user-role">Administrator</span>
+            </span>
+            <span class="material-symbols-outlined caret">expand_more</span>
+          </button>
+
+          @if (isUserMenuOpen) {
+            <div class="user-dropdown" role="menu">
+              <div class="dd-head">
+                <span class="dd-avatar">{{ (currentUser()?.name || 'A').charAt(0) | uppercase }}</span>
+                <div class="dd-id">
+                  <span class="dd-name">{{ currentUser()?.name || 'Administrator' }}</span>
+                  <span class="dd-email">{{ currentUser()?.email || 'admin@gmail.com' }}</span>
+                </div>
+              </div>
+
+              <div class="dd-divider"></div>
+
+              <div class="dd-group">
+                <span class="dd-label">Navigation</span>
+
+                <a routerLink="/admin/dashboard" class="dd-item" role="menuitem" style="--i:0" (click)="closeUserMenu()">
+                  <span class="material-symbols-outlined">space_dashboard</span>
+                  <span>Dashboard</span>
+                  <span class="material-symbols-outlined dd-arrow">arrow_forward</span>
+                </a>
+
+                <a routerLink="/admin/employees" class="dd-item" role="menuitem" style="--i:1" (click)="closeUserMenu()">
+                  <span class="material-symbols-outlined">badge</span>
+                  <span>Employees</span>
+                  <span class="material-symbols-outlined dd-arrow">arrow_forward</span>
+                </a>
+
+                <a routerLink="/admin/certificates" class="dd-item" role="menuitem" style="--i:2" (click)="closeUserMenu()">
+                  <span class="material-symbols-outlined">verified</span>
+                  <span>Certificates</span>
+                  <span class="material-symbols-outlined dd-arrow">arrow_forward</span>
+                </a>
+
+                <a routerLink="/" target="_blank" class="dd-item" role="menuitem" style="--i:3" (click)="closeUserMenu()">
+                  <span class="material-symbols-outlined">open_in_new</span>
+                  <span>Public Portal</span>
+                  <span class="material-symbols-outlined dd-arrow">arrow_forward</span>
+                </a>
+              </div>
+
+              <div class="dd-divider"></div>
+
+              <div class="dd-group">
+                <button class="dd-item dd-danger" role="menuitem" style="--i:4" (click)="onLogout()">
+                  <span class="material-symbols-outlined">logout</span>
+                  <span>Sign out</span>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= CONTENT ================= -->
+  <main class="admin-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

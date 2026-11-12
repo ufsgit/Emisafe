@@ -1,0 +1,176 @@
+<div class="reports-page">
+  <!-- Tabs Navigation -->
+  <div class="tabs-nav">
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab() === 'employee'" 
+      (click)="setActiveTab('employee')"
+    >
+      <span class="material-symbols-outlined">badge</span>
+      Employees
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab() === 'type'" 
+      (click)="setActiveTab('type')"
+    >
+      <span class="material-symbols-outlined">category</span>
+      Certificate Types
+    </button>
+
+    <button class="btn btn-primary btn-sm toolbar-export" (click)="exportCsv()">
+      <span class="material-symbols-outlined">download</span>
+      Export CSV
+    </button>
+  </div>
+
+  <!-- Report Content -->
+  @if (isLoading()) {
+    <div class="empty-state">
+      <span class="spinner"></span>
+      <p>Loading reports...</p>
+    </div>
+  } @else {
+    <!-- Tab 1: Employee-wise Report -->
+    @if (activeTab() === 'employee') {
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Employee Name</th>
+              <th>Emirates ID</th>
+              <th>Email</th>
+              <th>Designation</th>
+              <th>Status</th>
+              <th>Total Issued</th>
+              <th>Valid</th>
+              <th>Expired</th>
+              <th>Failed</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of employeeRows(); track row.employee_id) {
+              <tr>
+                <td>
+                  <a [routerLink]="['/admin/employees', row.employee_id]" class="emp-name-link">
+                    <strong class="cell-truncate" [title]="row.employee_name">{{ row.employee_name }}</strong>
+                  </a>
+                </td>
+                <td>
+                  <span class="font-mono text-muted">{{ row.emirates_id }}</span>
+                </td>
+                <td><span class="cell-truncate" [title]="row.employee_email">{{ row.employee_email }}</span></td>
+                <td><span class="cell-truncate" [title]="row.job_title">{{ row.job_title || 'N/A' }}</span></td>
+                <td>
+                  <span class="badge" [class.badge-active]="row.employee_active" [class.badge-inactive]="!row.employee_active">
+                    {{ row.employee_active ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td>
+                  <strong>{{ row.total_certificates }}</strong>
+                </td>
+                <td>
+                  <span class="text-green font-bold">{{ row.valid_certificates || 0 }}</span>
+                </td>
+                <td>
+                  <span [class.text-red]="row.expired_certificates > 0" class="font-bold">
+                    {{ row.expired_certificates || 0 }}
+                  </span>
+                </td>
+                <td>
+                  <span [class.text-red]="row.failed_certificates > 0">
+                    {{ row.failed_certificates || 0 }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class="pagination-bar">
+          <div>
+            Showing page {{ currentPage() }} of {{ totalPages() || 1 }} ({{ totalCount() }} total)
+          </div>
+          <div class="pagination-controls">
+            <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() <= 1">
+              Previous
+            </button>
+            <button class="active">{{ currentPage() }}</button>
+            <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() >= totalPages()">
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Tab 2: Certificate Type-wise Report -->
+    @if (activeTab() === 'type') {
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Certificate Type</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Total Issued</th>
+              <th>Valid</th>
+              <th>Expired</th>
+              <th>Failed</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (tRow of typeRows(); track tRow.certificate_type_id) {
+              <tr>
+                <td>
+                  <strong class="cell-truncate" [title]="tRow.certificate_type_name">{{ tRow.certificate_type_name }}</strong>
+                </td>
+                <td>
+                  <span class="category-chip">{{ tRow.category || 'General' }}</span>
+                </td>
+                <td>
+                  <span class="badge" [class.badge-active]="tRow.type_active" [class.badge-inactive]="!tRow.type_active">
+                    {{ tRow.type_active ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td>
+                  <strong>{{ tRow.total_issued }}</strong>
+                </td>
+                <td>
+                  <span class="text-green font-bold">{{ tRow.valid_count || 0 }}</span>
+                </td>
+                <td>
+                  <span [class.text-red]="tRow.expired_count > 0" class="font-bold">
+                    {{ tRow.expired_count || 0 }}
+                  </span>
+                </td>
+                <td>
+                  <span [class.text-red]="tRow.failed_count > 0">
+                    {{ tRow.failed_count || 0 }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class="pagination-bar">
+          <div>
+            Showing page {{ currentPage() }} of {{ totalPages() || 1 }} ({{ totalCount() }} total)
+          </div>
+          <div class="pagination-controls">
+            <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() <= 1">
+              Previous
+            </button>
+            <button class="active">{{ currentPage() }}</button>
+            <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() >= totalPages()">
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div>
