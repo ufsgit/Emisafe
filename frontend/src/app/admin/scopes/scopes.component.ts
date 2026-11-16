@@ -6,17 +6,17 @@ import { CertificateTypeService, CertificateType } from '../../core/services/cer
 import { ToastService } from '../../core/services/toast.service';
 
 @Component({
-  selector: 'app-certificate-types',
+  selector: 'app-scopes',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
-  templateUrl: './certificate-types.component.html',
-  styleUrls: ['./certificate-types.component.scss']
+  templateUrl: './scopes.component.html',
+  styleUrls: ['./scopes.component.scss']
 })
-export class CertificateTypesComponent implements OnInit {
+export class ScopesComponent implements OnInit {
   private typeService = inject(CertificateTypeService);
   private toast = inject(ToastService);
 
-  public types = signal<CertificateType[]>([]);
+  public scopes = signal<CertificateType[]>([]);
   public search = '';
   public statusFilter = '';
   public isLoading = signal<boolean>(false);
@@ -35,23 +35,38 @@ export class CertificateTypesComponent implements OnInit {
 
   // Confirm Modal
   public showConfirmModal = signal<boolean>(false);
-  public selectedType = signal<CertificateType | null>(null);
+  public selectedScope = signal<CertificateType | null>(null);
+
+  public accreditationOptions = ['EIAC', 'Non-EIAC'];
+
+  /** The 7 official EIAC certification scopes. */
+  public eiacScopeOptions = [
+    'Signal Man',
+    'Rigger Level 1',
+    'Rigger Level 2',
+    'Forklift Operator',
+    'EOT Crane Operator',
+    'Mobile Crane Operator',
+    'Tower Crane Operator'
+  ];
+
+  /** Selected EIAC scope name from the 7 official options. */
+  public selectedEiacScope = '';
+  /** Manual scope name for Non-EIAC. */
+  public scopeName = '';
 
   public formData: Partial<CertificateType> = {
-    name: '',
-    category: '',
-    description: '',
-    scope: '',
+    accreditation_status: 'EIAC',
     is_active: 1
   };
 
   private searchTimeout: any;
 
   ngOnInit(): void {
-    this.loadCertificateTypes();
+    this.loadScopes();
   }
 
-  loadCertificateTypes(): void {
+  loadScopes(): void {
     this.isLoading.set(true);
     this.typeService.getCertificateTypes({
       page: this.currentPage(),
@@ -62,7 +77,7 @@ export class CertificateTypesComponent implements OnInit {
       next: (res) => {
         this.isLoading.set(false);
         if (res.success && res.data) {
-          this.types.set(res.data.certificateTypes);
+          this.scopes.set(res.data.certificateTypes);
           if (res.data.pagination) {
             this.totalCount.set(res.data.pagination.total);
             this.totalPages.set(res.data.pagination.totalPages);
@@ -71,7 +86,7 @@ export class CertificateTypesComponent implements OnInit {
       },
       error: () => {
         this.isLoading.set(false);
-        this.toast.error('Failed to load certificate types.');
+        this.toast.error('Failed to load certification scopes.');
       }
     });
   }
@@ -80,19 +95,27 @@ export class CertificateTypesComponent implements OnInit {
     clearTimeout(this.searchTimeout);
     this.searchTimeout = setTimeout(() => {
       this.currentPage.set(1);
-      this.loadCertificateTypes();
+      this.loadScopes();
     }, 300);
   }
 
   onStatusChange(): void {
     this.currentPage.set(1);
-    this.loadCertificateTypes();
+    this.loadScopes();
   }
 
   changePage(newPage: number): void {
     if (newPage >= 1 && newPage <= this.totalPages()) {
       this.currentPage.set(newPage);
-      this.loadCertificateTypes();
+      this.loadScopes();
+    }
+  }
+
+  onAccreditationChange(): void {
+    if (this.formData.accreditation_status === 'EIAC') {
+      this.scopeName = '';
+    } else {
+      this.selectedEiacScope = '';
     }
   }
 
@@ -100,26 +123,32 @@ export class CertificateTypesComponent implements OnInit {
     this.isEditing.set(false);
     this.modalError.set('');
     this.formData = {
-      name: '',
-      category: '',
-      description: '',
-      scope: '',
+      accreditation_status: 'EIAC',
       is_active: 1
     };
+    this.selectedEiacScope = '';
+    this.scopeName = '';
     this.showModal.set(true);
   }
 
   openEditModal(ct: CertificateType): void {
     this.isEditing.set(true);
     this.modalError.set('');
+    const acc = ct.accreditation_status || 'EIAC';
     this.formData = {
       id: ct.id,
-      name: ct.name,
-      category: ct.category || '',
-      description: ct.description || '',
-      scope: ct.scope || '',
+      accreditation_status: acc,
       is_active: ct.is_active ? 1 : 0
     };
+
+    if (acc === 'EIAC') {
+      this.selectedEiacScope = ct.name || '';
+      this.scopeName = '';
+    } else {
+      this.selectedEiacScope = '';
+      this.scopeName = ct.name || '';
+    }
+
     this.showModal.set(true);
   }
 
@@ -127,63 +156,86 @@ export class CertificateTypesComponent implements OnInit {
     this.showModal.set(false);
   }
 
-  saveCertificateType(): void {
-    if (!this.formData.name || !this.formData.name.trim()) {
-      this.modalError.set('Certificate Type Name is required.');
+  saveScope(): void {
+    const accreditation = this.formData.accreditation_status;
+
+    if (!accreditation) {
+      this.modalError.set('Accreditation Status is required.');
       return;
     }
+
+    let name = '';
+    if (accreditation === 'EIAC') {
+      name = (this.selectedEiacScope || '').trim();
+      if (!name) {
+        this.modalError.set('Please select one of the 7 EIAC scopes.');
+        return;
+      }
+    } else {
+      name = (this.scopeName || '').trim();
+      if (!name) {
+        this.modalError.set('Please enter the Non-EIAC scope name.');
+        return;
+      }
+    }
+
+    const payload: Partial<CertificateType> = {
+      name,
+      accreditation_status: accreditation,
+      is_active: this.formData.is_active
+    };
 
     this.isSaving.set(true);
     this.modalError.set('');
 
     if (this.isEditing() && this.formData.id) {
-      this.typeService.updateCertificateType(this.formData.id, this.formData).subscribe({
+      this.typeService.updateCertificateType(this.formData.id, payload).subscribe({
         next: () => {
           this.isSaving.set(false);
           this.showModal.set(false);
-          this.toast.success('Certificate type updated successfully.');
-          this.loadCertificateTypes();
+          this.toast.success('Certification scope updated successfully.');
+          this.loadScopes();
         },
         error: (err) => {
           this.isSaving.set(false);
-          this.modalError.set(err.error?.message || 'Failed to update certificate type.');
+          this.modalError.set(err.error?.message || 'Failed to update certification scope.');
         }
       });
     } else {
-      this.typeService.createCertificateType(this.formData).subscribe({
+      this.typeService.createCertificateType(payload).subscribe({
         next: () => {
           this.isSaving.set(false);
           this.showModal.set(false);
-          this.toast.success('Certificate type created successfully.');
-          this.loadCertificateTypes();
+          this.toast.success('Certification scope created successfully.');
+          this.loadScopes();
         },
         error: (err) => {
           this.isSaving.set(false);
-          this.modalError.set(err.error?.message || 'Failed to create certificate type.');
+          this.modalError.set(err.error?.message || 'Failed to create certification scope.');
         }
       });
     }
   }
 
   confirmToggleStatus(ct: CertificateType): void {
-    this.selectedType.set(ct);
+    this.selectedScope.set(ct);
     this.showConfirmModal.set(true);
   }
 
   closeConfirmModal(): void {
     this.showConfirmModal.set(false);
-    this.selectedType.set(null);
+    this.selectedScope.set(null);
   }
 
   executeToggleStatus(): void {
-    const ct = this.selectedType();
+    const ct = this.selectedScope();
     if (!ct) return;
 
     this.typeService.toggleStatus(ct.id).subscribe({
       next: (res) => {
         this.closeConfirmModal();
         this.toast.success(res.message);
-        this.loadCertificateTypes();
+        this.loadScopes();
       },
       error: (err) => {
         this.closeConfirmModal();
@@ -192,4 +244,3 @@ export class CertificateTypesComponent implements OnInit {
     });
   }
 }
-

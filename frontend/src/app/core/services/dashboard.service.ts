@@ -8,33 +8,38 @@ export interface DashboardSummary {
   totalCertificates: number;
   passCount: number;
   failCount: number;
+  otherStatusCount?: number;
   validCount: number;
   expiredCount: number;
   expiringSoonCount: number;
+  pendingApprovalCount?: number;
 }
 
 export interface ExpiringSoonCertificate {
   id: number;
   certificate_number: string;
-  issue_date: string;
   expiry_date: string;
-  status: 'Pass' | 'Fail';
   employee_name: string;
   employee_emirates_id: string;
-  certificate_type_name: string;
-  validity_status: string;
+  certificate_type_name?: string;
+  scope_name?: string;
   days_remaining: number;
 }
 
+/** Certificates waiting for a certification manager's approval. */
+export interface PendingApprovalCertificate {
+  id: number;
+  certificate_number: string;
+  employee_name?: string;
+  employee_emirates_id?: string;
+  certificate_type_name?: string;
+  scope_name?: string;
+  company_name?: string | null;
+}
+
 export interface TrendStat {
-  key: string;
   label: string;
   issued: number;
-  pass: number;
-  fail: number;
-  valid: number;
-  expired: number;
-  newEmployees: number;
 }
 
 export interface TypeStat {
@@ -49,6 +54,8 @@ export interface DashboardResponse {
     trend: TrendStat[];
     byType: TypeStat[];
     expiringSoon: ExpiringSoonCertificate[];
+    pendingApproval?: PendingApprovalCertificate[];
+    pendingApprovals?: PendingApprovalCertificate[];
   };
 }
 

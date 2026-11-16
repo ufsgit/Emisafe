@@ -1,4 +1,4 @@
-<div class="employees-page">
+<div class="candidates-page">
   <!-- Filters & Search Toolbar -->
   <div class="toolbar-card">
     <div class="search-box">
@@ -7,7 +7,7 @@
         type="text" 
         [(ngModel)]="search" 
         (ngModelChange)="onSearchChange()" 
-        placeholder="Search employees..."
+        placeholder="Search candidates..."
         class="form-control search-input"
       />
     </div>
@@ -23,28 +23,30 @@
 
     <button class="btn btn-primary" (click)="openCreateModal()">
       <span class="material-symbols-outlined">person_add</span>
-      Add Employee
+      Add Candidate
     </button>
   </div>
 
-  <!-- Employees Table -->
+  <!-- Candidates Table -->
   <div class="table-container">
     @if (isLoading()) {
       <div class="empty-state">
         <span class="spinner"></span>
-        <p>Loading employees...</p>
+        <p>Loading candidates...</p>
       </div>
-    } @else if (employees().length === 0) {
+    } @else if (candidates().length === 0) {
       <div class="empty-state">
         <span class="material-symbols-outlined empty-icon">group_off</span>
-        <h4>No employees found</h4>
+        <h4>No candidates found</h4>
       </div>
     } @else {
       <table>
         <thead>
           <tr>
+            <th>Photo</th>
             <th>Name</th>
             <th>Emirates ID</th>
+            <th>Company</th>
             <th>Contact</th>
             <th>Designation</th>
             <th>Certificates</th>
@@ -53,11 +55,18 @@
           </tr>
         </thead>
         <tbody>
-          @for (emp of employees(); track emp.id) {
-            <tr>
+          @for (emp of candidates(); track emp.id) {
+            <tr class="row-clickable" (click)="goToDetail(emp)">
+              <td>
+                @if (emp.photo) {
+                  <img class="row-avatar" [src]="emp.photo" [alt]="emp.name" />
+                } @else {
+                  <span class="row-avatar row-avatar-fallback">{{ emp.name.charAt(0) | uppercase }}</span>
+                }
+              </td>
               <td>
                 <div class="cell-truncate" [title]="emp.name">
-                  <a [routerLink]="['/admin/employees', emp.id]" class="emp-name-link">
+                  <a [routerLink]="['/admin/candidates', emp.id]" class="emp-name-link" (click)="$event.stopPropagation()">
                     <strong>{{ emp.name }}</strong>
                   </a>
                 </div>
@@ -66,7 +75,10 @@
                 <span class="font-mono font-bold">{{ emp.emirates_id }}</span>
               </td>
               <td>
-                <div class="cell-truncate" [title]="emp.email">{{ emp.email }}</div>
+                <span class="cell-truncate" [title]="emp.company">{{ emp.company || 'N/A' }}</span>
+              </td>
+              <td>
+                <div class="cell-truncate" [title]="emp.email">{{ emp.email || 'N/A' }}</div>
                 <div class="text-muted text-xs">{{ emp.phone }}</div>
               </td>
               <td><span class="cell-truncate" [title]="emp.job_title">{{ emp.job_title || 'N/A' }}</span></td>
@@ -82,10 +94,10 @@
               </td>
               <td>
                 <div class="action-buttons">
-                  <a [routerLink]="['/admin/employees', emp.id]" class="action-btn" title="View details">
+                  <a [routerLink]="['/admin/candidates', emp.id]" class="action-btn" title="View details" (click)="$event.stopPropagation()">
                     <span class="material-symbols-outlined">visibility</span>
                   </a>
-                  <button type="button" class="action-btn" (click)="openEditModal(emp)" title="Edit">
+                  <button type="button" class="action-btn" (click)="openEditModal(emp); $event.stopPropagation()" title="Edit">
                     <span class="material-symbols-outlined">edit</span>
                   </button>
                   <button 
@@ -93,7 +105,7 @@
                     class="action-btn" 
                     [class.text-red]="emp.is_active" 
                     [class.text-green]="!emp.is_active"
-                    (click)="confirmToggleStatus(emp)" 
+                    (click)="confirmToggleStatus(emp, $event)" 
                     [title]="emp.is_active ? 'Deactivate' : 'Activate'"
                   >
                     <span class="material-symbols-outlined">
@@ -103,8 +115,8 @@
                   <button
                     type="button"
                     class="action-btn action-btn-delete"
-                    (click)="confirmDelete(emp)"
-                    title="Delete employee"
+                    (click)="confirmDelete(emp, $event)"
+                    title="Delete candidate"
                   >
                     <span class="material-symbols-outlined">delete</span>
                   </button>
@@ -133,18 +145,18 @@
     }
   </div>
 
-  <!-- Create / Edit Employee Modal -->
+  <!-- Create / Edit Candidate Modal -->
   @if (showModal()) {
     <div class="modal-backdrop" (click)="closeModal()">
       <div class="modal-card" (click)="$event.stopPropagation()">
         <div class="modal-header">
-          <h3>{{ isEditing() ? 'Edit Employee' : 'Add Employee' }}</h3>
+          <h3>{{ isEditing() ? 'Edit Candidate' : 'Add Candidate' }}</h3>
           <button class="close-btn" (click)="closeModal()">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
 
-        <form (ngSubmit)="saveEmployee()" class="modal-form">
+        <form (ngSubmit)="saveCandidate()" class="modal-form">
           <div class="modal-body">
             @if (modalError()) {
               <div class="alert alert-danger">{{ modalError() }}</div>
@@ -175,25 +187,56 @@
                 />
               </div>
 
+              <div class="form-group full-width">
+                <label>Photo *</label>
+                <div class="photo-upload-row">
+                  @if (photoPreview()) {
+                    <img class="photo-preview" [src]="photoPreview()" alt="Candidate photo preview" />
+                    <button type="button" class="btn btn-outline btn-sm" (click)="clearPhoto()">
+                      <span class="material-symbols-outlined">close</span>
+                      Remove
+                    </button>
+                  } @else {
+                    <span class="photo-preview photo-preview-empty">
+                      <span class="material-symbols-outlined">person</span>
+                    </span>
+                  }
+                  <label class="file-picker-btn btn btn-outline btn-sm" for="candidate-photo-input">
+                    <span class="material-symbols-outlined">upload</span>
+                    {{ photoPreview() ? 'Change photo' : 'Choose photo' }}
+                  </label>
+                  <input
+                    id="candidate-photo-input"
+                    type="file"
+                    accept="image/*"
+                    class="visually-hidden-input"
+                    (change)="onPhotoSelected($event)"
+                  />
+                </div>
+              </div>
+
+              <div class="form-section-label full-width">
+                <span class="material-symbols-outlined">more_horiz</span>
+                Optional
+              </div>
+
               <div class="form-group">
-                <label>Email *</label>
+                <label>Email</label>
                 <input 
                   type="email" 
                   [(ngModel)]="formData.email" 
                   name="email" 
-                  required 
                   class="form-control" 
                   placeholder="ahmed@company.ae"
                 />
               </div>
 
               <div class="form-group">
-                <label>Phone *</label>
+                <label>Phone</label>
                 <input 
                   type="text" 
                   [(ngModel)]="formData.phone" 
                   name="phone" 
-                  required 
                   class="form-control" 
                   placeholder="+971 50 123 4567"
                 />
@@ -207,6 +250,17 @@
                   name="job_title" 
                   class="form-control" 
                   placeholder="e.g., Safety Officer"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Company</label>
+                <input 
+                  type="text" 
+                  [(ngModel)]="formData.company" 
+                  name="company" 
+                  class="form-control" 
+                  placeholder="e.g., Emirates Steel"
                 />
               </div>
 
@@ -241,15 +295,17 @@
                 </select>
               </div>
 
-              <div class="form-group">
-                <label>Status</label>
-                <select [(ngModel)]="formData.is_active" name="is_active" class="form-control">
-                  <option [ngValue]="1">Active</option>
-                  <option [ngValue]="0">Inactive</option>
-                </select>
-              </div>
+              @if (isEditing()) {
+                <div class="form-group">
+                  <label>Status</label>
+                  <select [(ngModel)]="formData.is_active" name="is_active" class="form-control">
+                    <option [ngValue]="1">Active</option>
+                    <option [ngValue]="0">Inactive</option>
+                  </select>
+                </div>
+              }
 
-              <div class="form-group">
+              <div class="form-group full-width">
                 <label>Address</label>
                 <input 
                   type="text" 
@@ -269,7 +325,7 @@
                 <span class="spinner"></span>
                 <span>Saving...</span>
               } @else {
-                <span>{{ isEditing() ? 'Update Employee' : 'Save Employee' }}</span>
+                <span>{{ isEditing() ? 'Update Candidate' : 'Save Candidate' }}</span>
               }
             </button>
           </div>
@@ -290,7 +346,7 @@
         </div>
         <div class="modal-body">
           <p>
-            Are you sure you want to {{ selectedEmployee()?.is_active ? 'deactivate' : 'activate' }} <strong>{{ selectedEmployee()?.name }}</strong>?
+            Are you sure you want to {{ selectedCandidate()?.is_active ? 'deactivate' : 'activate' }} <strong>{{ selectedCandidate()?.name }}</strong>?
           </p>
         </div>
         <div class="modal-footer">
@@ -298,11 +354,11 @@
           <button 
             type="button" 
             class="btn" 
-            [class.btn-danger]="selectedEmployee()?.is_active" 
-            [class.btn-primary]="!selectedEmployee()?.is_active"
+            [class.btn-danger]="selectedCandidate()?.is_active" 
+            [class.btn-primary]="!selectedCandidate()?.is_active"
             (click)="executeToggleStatus()"
           >
-            {{ selectedEmployee()?.is_active ? 'Deactivate' : 'Activate' }}
+            {{ selectedCandidate()?.is_active ? 'Deactivate' : 'Activate' }}
           </button>
         </div>
       </div>
@@ -316,7 +372,7 @@
         <div class="modal-header modal-header-danger">
           <h3>
             <span class="material-symbols-outlined">delete_forever</span>
-            Delete Employee
+            Delete Candidate
           </h3>
           <button class="close-btn" (click)="closeDeleteModal()">
             <span class="material-symbols-outlined">close</span>
@@ -324,12 +380,12 @@
         </div>
         <div class="modal-body">
           <p>
-            You're about to permanently delete <strong>{{ selectedEmployee()?.name }}</strong>.
+            You're about to permanently delete <strong>{{ selectedCandidate()?.name }}</strong>.
           </p>
           <div class="danger-note">
             <span class="material-symbols-outlined">warning</span>
             <span>
-              This will also remove all certificates issued to this employee. This action cannot be undone.
+              This will also remove all certificates issued to this candidate. This action cannot be undone.
             </span>
           </div>
         </div>

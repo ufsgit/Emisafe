@@ -9,10 +9,11 @@ const router = express.Router();
 router.use(authenticateAdmin);
 
 const typeValidationRules = [
-  body('name').trim().notEmpty().withMessage('Certificate type name is required.'),
-  body('category').optional().trim(),
-  body('description').optional().trim(),
-  body('scope').optional().trim(),
+  body('name').trim().notEmpty().withMessage('Scope name is required.'),
+  body('accreditation_status')
+    .optional()
+    .isIn(['EIAC', 'Non-EIAC'])
+    .withMessage("Accreditation status must be 'EIAC' or 'Non-EIAC'."),
   handleValidationErrors
 ];
 

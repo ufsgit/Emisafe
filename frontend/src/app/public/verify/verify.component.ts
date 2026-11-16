@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Title, Meta } from '@angular/platform-browser';
 import { VerificationService, PublicVerificationResult } from '../../core/services/verification.service';
+import { ThemeService } from '../../core/services/theme.service';
 
 @Component({
   selector: 'app-verify',
@@ -19,6 +20,7 @@ export class VerifyComponent implements OnInit, OnDestroy {
   private titleService = inject(Title);
   private metaService = inject(Meta);
   private platformId = inject(PLATFORM_ID);
+  public theme = inject(ThemeService);
 
   public searchQuery = '';
   public searchedCertificateNumber = signal<string>('');
@@ -38,8 +40,16 @@ export class VerifyComponent implements OnInit, OnDestroy {
 
   public currentYear = new Date().getFullYear();
 
+  /**
+   * Colour coding for the certification status:
+   * Pass is green, Fail / Withdrawn / Withheld are red.
+   */
+  certStatusClass(status?: string): string {
+    return status === 'Pass' ? 'is-pass' : 'is-alert';
+  }
+
   ngOnInit(): void {
-    this.setTitleAndMeta('EmiSafe | Verify a Certificate', 'Official EmiSafe public portal to verify employee workplace safety certificates and credentials.');
+    this.setTitleAndMeta('EmiSafe | Verify a Certificate', 'Official EmiSafe public portal to verify candidate workplace safety certificates and credentials.');
 
     // Support shareable links via query parameter: /?certificate=CERT-NUMBER
     this.route.queryParamMap.subscribe(params => {
@@ -186,7 +196,7 @@ export class VerifyComponent implements OnInit, OnDestroy {
           this.generateQrCode(res.data.certificate.certificate_number);
           this.setTitleAndMeta(
             `EmiSafe | Verified: ${res.data.certificate.certificate_number} - ${res.data.employee.name}`,
-            `Verified ${res.data.certificate.certificate_type} for ${res.data.employee.name}. Current Status: ${res.data.certificate.validity_status}.`
+            `Verified ${res.data.certificate.scope_name || res.data.certificate.certificate_type} for ${res.data.employee.name}. Current Status: ${res.data.certificate.validity_status}.`
           );
         } else {
           this.result.set(null);

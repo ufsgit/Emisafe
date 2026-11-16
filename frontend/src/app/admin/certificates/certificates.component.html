@@ -1,75 +1,62 @@
 <div class="certificates-page">
-  <!-- Validity Tabs: All, Expired, Expiring Soon -->
+  <!-- Validity Tabs: All, Valid, Expiring Soon, Expired, Pending Approval -->
   <div class="tabs-nav">
-    <button 
-      class="tab-btn" 
-      [class.active]="validityTab === 'all'" 
-      (click)="setValidityTab('all')"
-    >
+    <button class="tab-btn" [class.active]="validityTab === 'all'" (click)="setValidityTab('all')">
       <span class="material-symbols-outlined">apps</span>
       All
     </button>
-    <button 
-      class="tab-btn" 
-      [class.active]="validityTab === 'expiring_soon'" 
-      (click)="setValidityTab('expiring_soon')"
-    >
+    <button class="tab-btn" [class.active]="validityTab === 'valid'" (click)="setValidityTab('valid')">
+      <span class="material-symbols-outlined text-green">check_circle</span>
+      Valid
+    </button>
+    <button class="tab-btn" [class.active]="validityTab === 'expiring_soon'" (click)="setValidityTab('expiring_soon')">
       <span class="material-symbols-outlined text-yellow">notification_important</span>
       Expiring Soon (30 Days)
     </button>
-    <button 
-      class="tab-btn" 
-      [class.active]="validityTab === 'expired'" 
-      (click)="setValidityTab('expired')"
-    >
+    <button class="tab-btn" [class.active]="validityTab === 'expired'" (click)="setValidityTab('expired')">
       <span class="material-symbols-outlined text-red">event_busy</span>
       Expired
     </button>
+    @if (auth.isManager()) {
+    <button class="tab-btn" [class.active]="validityTab === 'pending'" (click)="setValidityTab('pending')">
+      <span class="material-symbols-outlined text-yellow">pending_actions</span>
+      Pending Approval
+      @if (pendingCount() > 0) {
+      <span class="badge badge-expiring tab-badge">{{ pendingCount() }}</span>
+      }
+    </button>
+    }
   </div>
 
   <!-- Filters Toolbar -->
   <div class="toolbar-card">
     <div class="search-box">
       <span class="material-symbols-outlined search-icon">search</span>
-      <input 
-        type="text" 
-        [(ngModel)]="search" 
-        (ngModelChange)="onSearchChange()" 
-        placeholder="Search certificates..."
-        class="form-control search-input"
-      />
+      <input type="text" [(ngModel)]="search" (ngModelChange)="onSearchChange()"
+        placeholder="Search cert #, candidate, Emirates ID..." class="form-control search-input" />
     </div>
 
     <div class="filters-row">
-      <!-- Employee Filter -->
+      <!-- Scope Filter -->
       <div class="filter-item">
-        <label>Employee:</label>
-        <select [(ngModel)]="selectedEmployeeId" (change)="onFilterChange()" class="form-control select-filter">
-          <option value="">All Employees</option>
-          @for (emp of employeesList(); track emp.id) {
-            <option [value]="emp.id">{{ emp.name }}</option>
-          }
-        </select>
-      </div>
-
-      <!-- Type Filter -->
-      <div class="filter-item">
-        <label>Type:</label>
+        <label>Scope:</label>
         <select [(ngModel)]="selectedTypeId" (change)="onFilterChange()" class="form-control select-filter">
-          <option value="">All Types</option>
+          <option value="">All Scopes</option>
           @for (ct of typesList(); track ct.id) {
-            <option [value]="ct.id">{{ ct.name }}</option>
+          <option [value]="ct.id">{{ ct.name }}</option>
           }
         </select>
       </div>
 
-      <!-- Pass/Fail Filter -->
+      <!-- Certification Status Filter -->
       <div class="filter-item">
-        <label>Exam:</label>
+        <label>Status:</label>
         <select [(ngModel)]="statusFilter" (change)="onFilterChange()" class="form-control select-filter">
           <option value="">All</option>
           <option value="Pass">Pass</option>
           <option value="Fail">Fail</option>
+          <option value="Withdrawn">Withdrawn</option>
+          <option value="Withheld">Withheld</option>
         </select>
       </div>
     </div>
@@ -80,272 +67,431 @@
     </button>
   </div>
 
+  <!-- Certificate Format Bar (Demo Format vs Uploaded Raw Client Format) -->
+  <div class="format-bar-card">
+    <div class="format-bar-info">
+      <span class="material-symbols-outlined format-icon">description</span>
+      @if (activeFormat(); as fmt) {
+      <div class="format-text">
+        <span class="badge badge-valid">Client Format Active</span>
+        <strong class="format-filename">{{ fmt.file_name }}</strong>
+        <span class="text-muted text-xs">
+          (Uploaded {{ fmt.created_at | date:'dd MMM yyyy' }})
+        </span>
+      </div>
+      } @else {
+      <div class="format-text">
+        <span class="badge badge-expiring">Demo Format Active</span>
+        <span>Using the default demo certificate format until the client format is uploaded.</span>
+      </div>
+      }
+    </div>
+
+    <div class="format-bar-actions">
+      @if (activeFormat(); as fmt) {
+      <a [href]="fmt.file_path" target="_blank" rel="noopener" class="btn btn-outline btn-sm">
+        <span class="material-symbols-outlined">open_in_new</span>
+        View Raw Format
+      </a>
+      }
+      @if (auth.isAdmin()) {
+      <label class="btn btn-outline btn-sm format-upload-btn" for="raw-cert-format-input">
+        @if (isUploadingFormat()) {
+        <span class="spinner"></span>
+        <span>Uploading...</span>
+        } @else {
+        <span class="material-symbols-outlined">upload_file</span>
+        <span>{{ activeFormat() ? 'Replace Raw Format' : 'Upload Raw Certificate Format' }}</span>
+        }
+      </label>
+      <input id="raw-cert-format-input" type="file" accept="image/*,.pdf,.doc,.docx,.html,.svg"
+        class="visually-hidden-input" [disabled]="isUploadingFormat()" (change)="onFormatFileSelected($event)" />
+      @if (activeFormat()) {
+      <button type="button" class="btn btn-outline btn-sm" (click)="resetToDemoFormat()" [disabled]="isRemovingFormat()"
+        title="Revert to Demo Certificate Format">
+        <span class="material-symbols-outlined">restart_alt</span>
+        Use Demo Format
+      </button>
+      }
+      }
+    </div>
+  </div>
+
   <!-- Table -->
   <div class="table-container">
     @if (isLoading()) {
-      <div class="empty-state">
-        <span class="spinner"></span>
-        <p>Loading certificates...</p>
-      </div>
+    <div class="empty-state">
+      <span class="spinner"></span>
+      <p>Loading certificates...</p>
+    </div>
     } @else if (certificates().length === 0) {
-      <div class="empty-state">
-        <span class="material-symbols-outlined empty-icon">workspace_premium</span>
-        <h4>No certificates found</h4>
-      </div>
+    <div class="empty-state">
+      <span class="material-symbols-outlined empty-icon">workspace_premium</span>
+      <h4>No certificates found</h4>
+    </div>
     } @else {
-      <table>
-        <thead>
-          <tr>
-            <th>Certificate Number</th>
-            <th>Employee</th>
-            <th>Certificate Type</th>
-            <th>Issue Date</th>
-            <th>Expiry Date</th>
-            <th>Exam Status</th>
-            <th>Validity</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (cert of certificates(); track cert.id) {
-            <tr>
-              <td>
-                <span class="font-mono font-bold">{{ cert.certificate_number }}</span>
-              </td>
-              <td>
-                <a [routerLink]="['/admin/employees', cert.employee_id]" class="emp-name-link">
-                  <strong class="cell-truncate" [title]="cert.employee_name">{{ cert.employee_name }}</strong>
-                </a>
-                <div class="text-muted text-xs font-mono">{{ cert.employee_emirates_id }}</div>
-              </td>
-              <td>
-                <div class="cell-truncate" [title]="cert.certificate_type_name">{{ cert.certificate_type_name }}</div>
-                <div class="text-muted text-xs cell-truncate">{{ cert.certificate_type_category }}</div>
-              </td>
-              <td>{{ cert.issue_date | date:'dd MMM yyyy' }}</td>
-              <td>
-                <span [class.text-red]="!cert.is_valid" class="font-bold">
-                  {{ cert.expiry_date | date:'dd MMM yyyy' }}
-                </span>
-              </td>
-              <td>
-                <span class="badge" [class.badge-pass]="cert.status === 'Pass'" [class.badge-fail]="cert.status === 'Fail'">
-                  {{ cert.status }}
-                </span>
-              </td>
-              <td>
-                <span class="badge" [ngClass]="'badge-' + cert.validity_status.toLowerCase().replace(' ', '-')">
-                  {{ cert.validity_status }}
-                </span>
-              </td>
-              <td>
-                <div class="action-buttons">
-                  <a [routerLink]="['/']" [queryParams]="{ certificate: cert.certificate_number }" target="_blank" class="action-btn" title="Verify">
-                    <span class="material-symbols-outlined">open_in_new</span>
-                  </a>
-                  <button type="button" class="action-btn" (click)="openEditModal(cert)" title="Edit">
-                    <span class="material-symbols-outlined">edit</span>
-                  </button>
-                  <button type="button" class="action-btn action-btn-delete" (click)="confirmDelete(cert)" title="Delete certificate">
-                    <span class="material-symbols-outlined">delete</span>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+    <table>
+      <thead>
+        <tr>
+          <th>Cert No</th>
+          <th>Candidate</th>
+          <th>Scope</th>
+          <th>Company</th>
+          <th>Status</th>
+          <th>Validity</th>
+          <th>Approval</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (cert of certificates(); track cert.id) {
+        <tr>
+          <td>
+            <span class="font-mono font-bold">{{ cert.certificate_number }}</span>
+          </td>
+          <td>
+            <a [routerLink]="['/admin/candidates', cert.employee_id]" class="candidate-cell emp-name-link">
+              @if (cert.employee_photo || cert.photo) {
+              <img class="row-avatar" [src]="cert.employee_photo || cert.photo" [alt]="cert.employee_name" />
+              } @else {
+              <span class="row-avatar row-avatar-fallback">{{ (cert.employee_name || '?').charAt(0) }}</span>
+              }
+              <span class="cell-truncate" [title]="cert.employee_name">{{ cert.employee_name }}</span>
+            </a>
+            <div class="text-muted text-xs font-mono">{{ cert.employee_emirates_id }}</div>
+          </td>
+          <td>
+            <div class="cell-truncate" [title]="cert.scope_name || cert.certificate_type_name">
+              {{ cert.scope_name || cert.certificate_type_name }}
+            </div>
+            @if (cert.accreditation_status) {
+            <div class="text-muted text-xs">{{ cert.accreditation_status }}</div>
+            }
+          </td>
+          <td>
+            <span class="cell-truncate" [title]="cert.company_name">{{ cert.company_name || 'N/A' }}</span>
+          </td>
+          <td>
+            <span class="badge" [ngClass]="statusBadgeClass(cert.status)">
+              {{ cert.status }}
+            </span>
+          </td>
+          <td>
+            <span class="badge" [ngClass]="'badge-' + cert.validity_status.toLowerCase().replace(' ', '-')">
+              {{ cert.validity_status }}
+            </span>
+          </td>
+          <td>
+            <span class="badge" [ngClass]="approvalBadgeClass(cert.approval_status)">
+              {{ approvalLabel(cert.approval_status) }}
+            </span>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <a [routerLink]="['/admin/certificates', cert.id, 'print']" target="_blank" class="action-btn"
+                title="Certificate (Standard Format)">
+                <span class="material-symbols-outlined">print</span>
+              </a>
+              <a [routerLink]="['/admin/certificates', cert.id, 'alternate']" target="_blank" class="action-btn"
+                title="Alternate Format">
+                <span class="material-symbols-outlined">badge</span>
+              </a>
+              @if (auth.isManager() && cert.approval_status !== 'approved') {
+              <button type="button" class="action-btn action-approve" (click)="approveCert(cert, $event)"
+                title="Approve">
+                <span class="material-symbols-outlined">how_to_reg</span>
+              </button>
+              }
+              <button type="button" class="action-btn" (click)="openEditModal(cert)" title="Edit">
+                <span class="material-symbols-outlined">edit</span>
+              </button>
+              <button type="button" class="action-btn action-btn-delete" (click)="confirmDelete(cert)"
+                title="Delete certificate">
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
 
-      <!-- Pagination -->
-      <div class="pagination-bar">
-        <div>
-          Showing page {{ currentPage() }} of {{ totalPages() || 1 }} ({{ totalCount() }} total)
-        </div>
-        <div class="pagination-controls">
-          <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() <= 1">
-            Previous
-          </button>
-          <button class="active">{{ currentPage() }}</button>
-          <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() >= totalPages()">
-            Next
-          </button>
-        </div>
+    <!-- Pagination -->
+    <div class="pagination-bar">
+      <div>
+        Showing page {{ currentPage() }} of {{ totalPages() || 1 }} ({{ totalCount() }} total)
       </div>
+      <div class="pagination-controls">
+        <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() <= 1">
+          Previous
+        </button>
+        <button class="active">{{ currentPage() }}</button>
+        <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() >= totalPages()">
+          Next
+        </button>
+      </div>
+    </div>
     }
   </div>
 
   <!-- Create / Edit Certificate Modal -->
   @if (showModal()) {
-    <div class="modal-backdrop" (click)="closeModal()">
-      <div class="modal-card" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>{{ isEditing() ? 'Edit Certificate' : 'Issue Certificate' }}</h3>
-          <button class="close-btn" (click)="closeModal()">
-            <span class="material-symbols-outlined">close</span>
-          </button>
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ isEditing() ? 'Edit Certificate' : 'Issue Certificate' }}</h3>
+        <button class="close-btn" (click)="closeModal()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <!-- Success panel: issued certificate actions -->
+      @if (issuedResult(); as issued) {
+      <div class="modal-body result-panel">
+        <div class="result-icon">
+          <span class="material-symbols-outlined">verified</span>
         </div>
+        <h4>Certificate issued</h4>
+        <p class="result-number font-mono">{{ issued.number }}</p>
+        <p class="result-note">Sent for approval — a certification manager must approve it before it is published.</p>
+        @if (issued.id) {
+        <div class="result-actions">
+          <a class="btn btn-primary" [routerLink]="['/admin/certificates', issued.id, 'print']" target="_blank">
+            <span class="material-symbols-outlined">print</span>
+            Certificate (PDF Format)
+          </a>
+          <a class="btn btn-outline" [routerLink]="['/admin/certificates', issued.id, 'alternate']" target="_blank">
+            <span class="material-symbols-outlined">badge</span>
+            Alternate Format
+          </a>
+        </div>
+        }
+        <div class="result-footer">
+          <button type="button" class="btn btn-outline" (click)="closeResultPanel()">Close</button>
+        </div>
+      </div>
+      } @else {
+      <form (ngSubmit)="saveCertificate()">
+        <div class="modal-body">
+          @if (modalError()) {
+          <div class="alert alert-danger">{{ modalError() }}</div>
+          }
 
-        <form (ngSubmit)="saveCertificate()">
-          <div class="modal-body">
-            @if (modalError()) {
-              <div class="alert alert-danger">{{ modalError() }}</div>
-            }
-
-            <div class="form-grid">
-              <!-- Employee Select -->
-              <div class="form-group">
-                <label>Employee *</label>
-                <select [(ngModel)]="formData.employee_id" name="employee_id" required class="form-control">
-                  <option [ngValue]="null">-- Select Employee --</option>
+          <div class="form-grid">
+            @if (!isEditing()) {
+            <!-- 1. Emirates ID + Search -->
+            <div class="form-group full-width">
+              <label>Emirates ID *</label>
+              <div class="lookup-row">
+                <input type="text" [(ngModel)]="formData.emirates_id" name="emirates_id" list="candidates-eid-list"
+                  required class="form-control font-mono" placeholder="784-1988-1234567-1"
+                  (keydown.enter)="$event.preventDefault(); lookupCandidate()" (change)="lookupCandidate()" />
+                <datalist id="candidates-eid-list">
                   @for (emp of employeesList(); track emp.id) {
-                    <option [ngValue]="emp.id">{{ emp.name }} ({{ emp.emirates_id }})</option>
+                  <option [value]="emp.emirates_id">{{ emp.name }}</option>
                   }
-                </select>
-              </div>
-
-              <!-- Certificate Type Select -->
-              <div class="form-group">
-                <label>Certificate Type *</label>
-                <select [(ngModel)]="formData.certificate_type_id" name="certificate_type_id" required class="form-control">
-                  <option [ngValue]="null">-- Select Type --</option>
-                  @for (ct of activeTypesList(); track ct.id) {
-                    <option [ngValue]="ct.id">{{ ct.name }}</option>
+                </datalist>
+                <button type="button" class="btn btn-outline" (click)="lookupCandidate()" [disabled]="isLookingUp()">
+                  @if (isLookingUp()) {
+                  <span class="spinner"></span>
+                  <span>Searching...</span>
+                  } @else {
+                  <span class="material-symbols-outlined">search</span>
+                  <span>Search</span>
                   }
-                </select>
-              </div>
-
-              <!-- Certificate Number -->
-              <div class="form-group">
-                <label>Certificate Number *</label>
-                <div class="input-with-gen">
-                  <input 
-                    type="text" 
-                    [(ngModel)]="formData.certificate_number" 
-                    name="certificate_number" 
-                    required 
-                    class="form-control font-mono font-bold" 
-                    placeholder="e.g., CERT-2026-99001"
-                  />
-                  <button type="button" class="btn btn-outline btn-sm gen-btn" (click)="generateCertNumber()" title="Generate">
-                    Generate
-                  </button>
-                </div>
-              </div>
-
-              <!-- Exam Status -->
-              <div class="form-group">
-                <label>Status *</label>
-                <select [(ngModel)]="formData.status" name="status" class="form-control">
-                  <option value="Pass">Pass</option>
-                  <option value="Fail">Fail</option>
-                </select>
-              </div>
-
-              <!-- Issue Date -->
-              <div class="form-group">
-                <label>Issue Date *</label>
-                <input 
-                  type="date" 
-                  [(ngModel)]="formData.issue_date" 
-                  name="issue_date" 
-                  required 
-                  class="form-control" 
-                />
-              </div>
-
-              <!-- Expiry Date -->
-              <div class="form-group">
-                <label>Expiry Date *</label>
-                <input 
-                  type="date" 
-                  [(ngModel)]="formData.expiry_date" 
-                  name="expiry_date" 
-                  required 
-                  class="form-control" 
-                />
-              </div>
-
-              <!-- Description -->
-              <div class="form-group">
-                <label>Description</label>
-                <input 
-                  type="text"
-                  [(ngModel)]="formData.description" 
-                  name="description" 
-                  class="form-control" 
-                  placeholder="Remarks or notes..."
-                />
-              </div>
-
-              <!-- Scope of Certificate -->
-              <div class="form-group">
-                <label>Scope</label>
-                <input 
-                  type="text"
-                  [(ngModel)]="formData.scope" 
-                  name="scope" 
-                  class="form-control" 
-                  placeholder="Scope details..."
-                />
+                </button>
               </div>
             </div>
-          </div>
 
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline" (click)="closeModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary" [disabled]="isSaving()">
-              @if (isSaving()) {
-                <span class="spinner"></span>
-                <span>Saving...</span>
+            <!-- 2. Candidate photo (from lookup) -->
+            <div class="form-group">
+              <label>Candidate Name *</label>
+              <input type="text" class="form-control" [value]="lookupName()" readonly
+                placeholder="Search by Emirates ID" />
+            </div>
+            <div class="form-group">
+              <label>Candidate Photo *</label>
+              @if (lookupPhoto()) {
+              <img class="candidate-photo" [src]="lookupPhoto()" alt="Candidate photo" />
               } @else {
-                <span>{{ isEditing() ? 'Update Certificate' : 'Issue Certificate' }}</span>
+              <div class="photo-missing">
+                <span class="material-symbols-outlined">person_off</span>
+                <span>No photo on record</span>
+              </div>
               }
-            </button>
+            </div>
+            @if (candidatePhotoMissing()) {
+            <div class="inline-warning full-width">
+              <span class="material-symbols-outlined">warning</span>
+              Add a photo to this candidate first
+            </div>
+            }
+            } @else {
+            <div class="form-group">
+              <label>Candidate</label>
+              <input type="text" class="form-control" [value]="lookupName()" readonly />
+            </div>
+            <div class="form-group">
+              <label>Candidate Photo</label>
+              @if (lookupPhoto()) {
+              <img class="candidate-photo" [src]="lookupPhoto()" alt="Candidate photo" />
+              } @else {
+              <div class="photo-missing">
+                <span class="material-symbols-outlined">person_off</span>
+                <span>No photo on record</span>
+              </div>
+              }
+            </div>
+            }
+
+            <!-- 3. Company Name -->
+            <div class="form-group">
+              <label>Company Name *</label>
+              <input type="text" [(ngModel)]="formData.company_name" name="company_name" required class="form-control"
+                placeholder="e.g., Emirates Steel" />
+            </div>
+
+            <!-- 4. Accreditation Status (EIAC / Non-EIAC choice comes first) -->
+            <div class="form-group">
+              <label>Accreditation Status *</label>
+              <select [(ngModel)]="formData.accreditation_status" name="accreditation_status" required
+                class="form-control" (change)="onAccreditationChange()">
+                @for (a of accreditationOptions; track a) {
+                <option [value]="a">{{ a }}</option>
+                }
+              </select>
+            </div>
+
+            <!-- 5. Certification Scope: If EIAC -> 7 EIAC scopes dropdown; If Non-EIAC -> manual input -->
+            @if (formData.accreditation_status === 'EIAC') {
+            <div class="form-group">
+              <label>Certification Scope *</label>
+              <select [(ngModel)]="formData.certificate_type_id" name="certificate_type_id" required
+                class="form-control">
+                <option [ngValue]="null">-- Select EIAC Scope --</option>
+                @for (ct of eiacTypesList(); track ct.id) {
+                <option [ngValue]="ct.id">{{ ct.name }}</option>
+                }
+              </select>
+            </div>
+            } @else {
+            <div class="form-group">
+              <label>Certification Scope (Manual) *</label>
+              <input type="text" [(ngModel)]="formData.scope_manual" name="scope_manual" required class="form-control"
+                placeholder="Enter Non-EIAC certification scope..." />
+            </div>
+            }
+
+            <!-- 6. Certification Status -->
+            <div class="form-group">
+              <label>Certification Status *</label>
+              <select [(ngModel)]="formData.status" name="status" required class="form-control">
+                @for (s of statusOptions; track s) {
+                <option [value]="s">{{ s }}</option>
+                }
+              </select>
+            </div>
+
+            <!-- 7. Work Order + Code (certificate number is generated on the server) -->
+            <div class="form-group">
+              <label>Work Order *</label>
+              <input type="text" [(ngModel)]="formData.work_order" name="work_order" required
+                class="form-control font-mono" placeholder="1234" maxlength="32"
+                (ngModelChange)="onNumberInputChange()" />
+            </div>
+
+            <div class="form-group">
+              <label>Code *</label>
+              <input type="text" [(ngModel)]="formData.code" name="code" required class="form-control font-mono"
+                placeholder="GT" maxlength="10" (ngModelChange)="onNumberInputChange()" />
+            </div>
+
+            <div class="form-group full-width">
+              <label>Certificate Number</label>
+              <input type="text" class="form-control font-mono font-bold" readonly [value]="generatedNumber() || '—'"
+                placeholder="WOR-yy/xxxx/ddmm-xx-Cz" />
+              @if (!isEditing()) {
+              <span class="field-helper">
+                Generated automatically — the sequence continues within the work order and restarts at C1 for a new
+                work order.
+              </span>
+              } @else {
+              <span class="field-helper">Issued certificates keep the number they were issued with.</span>
+              }
+            </div>
+
+            <!-- 8. Issue / Expiry dates -->
+            <div class="form-group">
+              <label>Issue Date *</label>
+              <input type="date" [(ngModel)]="formData.issue_date" name="issue_date" required class="form-control"
+                (change)="onNumberInputChange()" />
+            </div>
+
+            <div class="form-group">
+              <label>Expiry Date *</label>
+              <input type="date" [(ngModel)]="formData.expiry_date" name="expiry_date" required class="form-control" />
+            </div>
           </div>
-        </form>
-      </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary"
+            [disabled]="isSaving() || (!isEditing() && candidatePhotoMissing())">
+            @if (isSaving()) {
+            <span class="spinner"></span>
+            <span>Saving...</span>
+            } @else {
+            <span>{{ isEditing() ? 'Update Certificate' : 'Issue Certificate' }}</span>
+            }
+          </button>
+        </div>
+      </form>
+      }
     </div>
+  </div>
   }
 
   <!-- Delete Confirmation Modal -->
   @if (showDeleteModal()) {
-    <div class="modal-backdrop" (click)="closeDeleteModal()">
-      <div class="modal-card confirm-modal delete-modal" (click)="$event.stopPropagation()">
-        <div class="modal-header modal-header-danger">
-          <h3>
-            <span class="material-symbols-outlined">delete_forever</span>
-            Delete Certificate
-          </h3>
-          <button class="close-btn" (click)="closeDeleteModal()">
-            <span class="material-symbols-outlined">close</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <p>
-            You're about to permanently delete certificate
-            <strong class="font-mono">{{ selectedCert()?.certificate_number }}</strong>
-            issued to <strong>{{ selectedCert()?.employee_name }}</strong>.
-          </p>
-          <div class="danger-note">
-            <span class="material-symbols-outlined">warning</span>
-            <span>The public verification link for this certificate will stop working. This action cannot be undone.</span>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline" (click)="closeDeleteModal()" [disabled]="isDeleting()">
-            Cancel
-          </button>
-          <button type="button" class="btn btn-danger" (click)="executeDelete()" [disabled]="isDeleting()">
-            @if (isDeleting()) {
-              <span class="spinner"></span>
-              <span>Deleting...</span>
-            } @else {
-              <span class="material-symbols-outlined">delete</span>
-              <span>Delete Permanently</span>
-            }
-          </button>
+  <div class="modal-backdrop" (click)="closeDeleteModal()">
+    <div class="modal-card confirm-modal delete-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header modal-header-danger">
+        <h3>
+          <span class="material-symbols-outlined">delete_forever</span>
+          Delete Certificate
+        </h3>
+        <button class="close-btn" (click)="closeDeleteModal()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>
+          You're about to permanently delete certificate
+          <strong class="font-mono">{{ selectedCert()?.certificate_number }}</strong>
+          issued to <strong>{{ selectedCert()?.employee_name }}</strong>.
+        </p>
+        <div class="danger-note">
+          <span class="material-symbols-outlined">warning</span>
+          <span>The public verification link for this certificate will stop working. This action cannot be
+            undone.</span>
         </div>
       </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="closeDeleteModal()" [disabled]="isDeleting()">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-danger" (click)="executeDelete()" [disabled]="isDeleting()">
+          @if (isDeleting()) {
+          <span class="spinner"></span>
+          <span>Deleting...</span>
+          } @else {
+          <span class="material-symbols-outlined">delete</span>
+          <span>Delete Permanently</span>
+          }
+        </button>
+      </div>
     </div>
+  </div>
   }
 </div>

@@ -28,15 +28,17 @@
   display: flex;
   gap: 6px;
   border-bottom: 2px solid var(--border-color);
-  padding-bottom: 2px;
+  padding-bottom: 0;
   overflow-x: auto;
+  overflow-y: hidden;
 
   .tab-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 7px 14px;
-    border: none;
+    padding: 8px 14px;
+    border: 1px solid transparent;
+    border-bottom: none;
     background: transparent;
     font-size: 0.83rem;
     font-family: var(--font-heading);
@@ -51,17 +53,15 @@
 
     &:hover {
       color: var(--primary-navy);
-      background-color: rgba(24, 62, 93, 0.04);
+      background-color: rgba(79, 70, 229, 0.06);
+      transform: translateY(-1px);
     }
 
     &.active {
       color: var(--primary-navy);
-      background-color: #ffffff;
-      border: 1px solid var(--border-color);
-      border-bottom-color: #ffffff;
-      margin-bottom: -3px;
-      padding-bottom: 8px;
-      box-shadow: 0 -2px 6px rgba(0,0,0,0.03);
+      background: linear-gradient(180deg, #FFFFFF 0%, #F5F7FF 100%);
+      border-color: rgba(99, 102, 241, 0.25);
+      box-shadow: 0 -4px 12px -4px rgba(79, 70, 229, 0.14);
     }
 
     .text-yellow {
@@ -76,7 +76,7 @@
 
 .toolbar-card {
   background: #ffffff;
-  padding: 9px 12px;
+  padding: 10px 14px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
@@ -84,11 +84,11 @@
   flex-direction: row;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 14px;
 
   .search-box {
     position: relative;
-    width: 230px;
+    width: 220px;
     flex-shrink: 0;
 
     .search-icon {
@@ -102,7 +102,7 @@
     }
 
     .search-input {
-      height: 34px;
+      height: 36px;
       padding-left: 36px;
       font-size: 0.83rem;
     }
@@ -111,28 +111,31 @@
   .filters-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 14px;
     flex-wrap: wrap;
     flex: 1;
-    min-width: 320px;
+    min-width: 0;
 
     .filter-item {
       display: flex;
       align-items: center;
       gap: 8px;
-      flex: 1;
-      min-width: 150px;
+      flex: 1 1 180px;
+      min-width: 0;
 
       label {
         font-size: 0.78rem;
         font-weight: 600;
         color: var(--text-secondary);
         white-space: nowrap;
+        flex-shrink: 0;
       }
 
       .select-filter {
         flex: 1;
-        height: 34px;
+        width: 100%;
+        min-width: 0;
+        height: 36px;
         padding: 4px 32px 4px 10px;
         font-size: 0.82rem;
       }
@@ -174,13 +177,225 @@
   }
 }
 
-.input-with-gen {
+/* Pending Approval tab counter */
+.tab-badge {
+  padding: 1px 7px;
+  font-size: 0.68rem;
+  margin-left: 2px;
+}
+
+/* Candidate cell with avatar */
+.candidate-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.row-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+  background: #E3E8EE;
+  flex-shrink: 0;
+}
+
+.row-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-navy);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* Approve action (managers only) */
+.action-approve {
+  color: var(--success-green);
+
+  &:hover {
+    background: var(--success-green);
+    border-color: var(--success-green);
+    color: #ffffff;
+    box-shadow: 0 6px 14px -6px rgba(5, 150, 105, 0.55);
+  }
+}
+
+/* Issue form — candidate lookup */
+.lookup-row {
   display: flex;
   gap: 8px;
 
-  .gen-btn {
-    padding: 8px 12px;
-    font-size: 0.8rem;
+  input {
+    flex: 1;
   }
+}
+
+/* Helper text under the auto-generated certificate number */
+.field-helper {
+  font-size: 0.71rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.candidate-photo {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+}
+
+.photo-missing {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-sm);
+  background: #F8FAFC;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+
+  .material-symbols-outlined {
+    font-size: 18px;
+  }
+}
+
+.inline-warning {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 12px;
+  background: var(--accent-yellow-light);
+  border: 1px solid rgba(248, 197, 12, 0.45);
+  border-radius: var(--radius-sm);
+  color: #8C6A00;
+  font-size: 0.83rem;
+  font-weight: 600;
+
+  .material-symbols-outlined {
+    font-size: 17px;
+  }
+}
+
+/* Success panel after issuing a certificate */
+.result-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 26px 22px;
+
+  .result-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--success-green-light);
+    border: 1px solid rgba(30, 158, 90, 0.25);
+    color: var(--success-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .material-symbols-outlined {
+      font-size: 30px;
+    }
+  }
+
+  h4 {
+    font-size: 1.1rem;
+    color: var(--primary-navy);
+  }
+
+  .result-number {
+    font-size: 0.95rem;
+    color: var(--text-main);
+    word-break: break-all;
+  }
+
+  .result-note {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    max-width: 400px;
+  }
+
+  .result-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .result-footer {
+    margin-top: 12px;
+  }
+}
+
+/* Raw Certificate Format Provision Bar */
+.format-bar-card {
+  background: #ffffff;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  .format-bar-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.83rem;
+    color: var(--text-secondary);
+
+    .format-icon {
+      color: var(--primary-navy);
+      font-size: 20px;
+    }
+
+    .format-text {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .format-filename {
+      color: var(--text-main);
+    }
+  }
+
+  .format-bar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .format-upload-btn {
+    cursor: pointer;
+    margin: 0;
+  }
+}
+
+.visually-hidden-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 

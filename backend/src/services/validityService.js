@@ -9,9 +9,9 @@ const config = require('../config/env');
  * @returns {{ validityStatus: 'Valid' | 'Expiring Soon' | 'Expired' | 'Fail', isValid: boolean, daysRemaining: number }}
  */
 function computeCertificateValidity(expiryDate, status) {
-  if (status === 'Fail') {
+  if (status === 'Fail' || status === 'Withdrawn' || status === 'Withheld') {
     return {
-      validityStatus: 'Fail',
+      validityStatus: status,
       isValid: false,
       daysRemaining: 0
     };
@@ -48,21 +48,28 @@ function computeCertificateValidity(expiryDate, status) {
 }
 
 /**
- * Masks an Emirates ID for public display according to requirements.
- * Format: 784-YYYY-XXXXXXX-X -> 784-****-*******-X (shows only last 4 digits/character or standard mask)
- * Requirement: "Emirates ID, masked (show only the last 4 digits, e.g. 784-****-*******-3)"
+ * Masks an Emirates ID for public display.
+ * Rule (spec): show ONLY the first 7 digits and the last 3 digits,
+ * everything in between is replaced with '•' (digits only, dashes stripped).
+ * Example: 784-1988-1234567-1 -> 7841988•••••671
  */
 function maskEmiratesId(emiratesId) {
   if (!emiratesId || typeof emiratesId !== 'string') return '';
-  const parts = emiratesId.split('-');
-  if (parts.length === 4) {
-    return `${parts[0]}-****-*******-${parts[3]}`;
+  const digits = emiratesId.replace(/\D/g, '');
+  if (!digits) return '';
+
+  if (digits.length > 10) {
+    const head = digits.slice(0, 7);
+    const tail = digits.slice(-3);
+    const middle = '•'.repeat(digits.length - 10);
+    return `${head}${middle}${tail}`;
   }
-  // Fallback mask if not dashed
-  if (emiratesId.length >= 8) {
-    return emiratesId.slice(0, 3) + '-****-*******-' + emiratesId.slice(-1);
+
+  // Short/non-standard values: keep first 3 and last 3, mask the rest
+  if (digits.length > 6) {
+    return digits.slice(0, 3) + '•'.repeat(digits.length - 6) + digits.slice(-3);
   }
-  return '***-****-****-***';
+  return '•'.repeat(digits.length);
 }
 
 module.exports = {

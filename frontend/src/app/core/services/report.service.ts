@@ -19,7 +19,7 @@ export interface EmployeeReportRow {
 export interface TypeReportRow {
   certificate_type_id: number;
   certificate_type_name: string;
-  category: string;
+  accreditation_status?: string;
   type_active: number;
   total_issued: number;
   valid_count: number;

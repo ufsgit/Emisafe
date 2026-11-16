@@ -1,0 +1,93 @@
+import { Component, OnInit, inject, signal, PLATFORM_ID } from '@angular/core';
+import { CommonModule, DatePipe, isPlatformBrowser } from '@angular/common';
+import { ActivatedRoute, RouterModule } from '@angular/router';
+import { CertificateService, CertificateFormatItem } from '../../core/services/certificate.service';
+import {
+  CertificateDocument,
+  buildVerifyUrl,
+  makeVerifyQrDataUrl,
+  toCertificateDocument
+} from '../../core/utils/certificate-document';
+
+@Component({
+  selector: 'app-certificate-alternate',
+  standalone: true,
+  imports: [CommonModule, RouterModule, DatePipe],
+  templateUrl: './certificate-alternate.component.html',
+  styleUrls: ['./certificate-alternate.component.scss']
+})
+export class CertificateAlternateComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private certService = inject(CertificateService);
+  private platformId = inject(PLATFORM_ID);
+
+  public doc = signal<CertificateDocument | null>(null);
+  public isLoading = signal<boolean>(true);
+  public loadError = signal<string>('');
+  public qrDataUrl = signal<string>('');
+  public verifyUrl = signal<string>('');
+  public activeFormat = signal<CertificateFormatItem | null>(null);
+  public today = new Date();
+
+  ngOnInit(): void {
+    this.loadCertificateFormats();
+
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.loadCertificate(parseInt(id, 10));
+    } else {
+      this.isLoading.set(false);
+      this.loadError.set('Certificate not found.');
+    }
+  }
+
+  /** Newest raw format first — the first entry is the one currently in use. */
+  loadCertificateFormats(): void {
+    this.certService.getCertificateFormats().subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.activeFormat.set(res.data?.format || null);
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  loadCertificate(id: number): void {
+    this.isLoading.set(true);
+    this.loadError.set('');
+
+    this.certService.getCertificate(id).subscribe({
+      next: (res) => {
+        this.isLoading.set(false);
+        const doc = toCertificateDocument(res);
+        if (doc) {
+          this.doc.set(doc);
+          this.generateQr(doc.number);
+        } else {
+          this.loadError.set('Certificate not found.');
+        }
+      },
+      error: () => {
+        this.isLoading.set(false);
+        this.loadError.set('Failed to load certificate.');
+      }
+    });
+  }
+
+  private generateQr(certNumber: string): void {
+    if (!certNumber) return;
+    this.verifyUrl.set(buildVerifyUrl(certNumber));
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    makeVerifyQrDataUrl(certNumber)
+      .then(url => this.qrDataUrl.set(url))
+      .catch(err => console.error('QR code generation failed:', err));
+  }
+
+  print(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      window.print();
+    }
+  }
+}

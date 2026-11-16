@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { ToastService } from './core/services/toast.service';
+import { ThemeService } from './core/services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -12,5 +13,6 @@ import { ToastService } from './core/services/toast.service';
 })
 export class App {
   private toastService = inject(ToastService);
+  public theme = inject(ThemeService);
   public toasts = this.toastService.toasts;
 }

@@ -24,9 +24,9 @@ async function authenticateAdmin(req, res, next) {
 
     const decoded = jwt.verify(token, config.JWT_SECRET);
 
-    // Verify admin still exists in database
+    // Verify admin still exists in database and load the full profile
     const [rows] = await db.query(
-      'SELECT id, name, email FROM admins WHERE id = ?',
+      'SELECT id, name, email, role, photo, is_active FROM admins WHERE id = ?',
       [decoded.id]
     );
 
@@ -34,6 +34,14 @@ async function authenticateAdmin(req, res, next) {
       return res.status(401).json({
         success: false,
         message: 'Invalid or expired session. Please log in again.'
+      });
+    }
+
+    // Deactivated accounts lose access immediately (even with a valid token)
+    if (!rows[0].is_active) {
+      return res.status(403).json({
+        success: false,
+        message: 'Account deactivated'
       });
     }
 
@@ -53,7 +61,24 @@ async function authenticateAdmin(req, res, next) {
   }
 }
 
+/**
+ * Role gate. Must be used AFTER authenticateAdmin so req.admin is populated.
+ * Usage: router.get('/', authenticateAdmin, requireRole('admin'), handler)
+ */
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.admin || !req.admin.role || !roles.includes(req.admin.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. You do not have permission to perform this action.'
+      });
+    }
+    next();
+  };
+}
+
 module.exports = {
-  authenticateAdmin
+  authenticateAdmin,
+  requireRole
 };
 

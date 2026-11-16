@@ -7,7 +7,7 @@
       <!-- Brand -->
       <div class="nav-brand">
         <a routerLink="/admin/dashboard" class="brand-link">
-          <img src="/assets/logo/logo-white.svg" alt="EmiSafe" class="brand-logo" width="56" height="56" />
+          <img src="/assets/logo/logo-white.svg" alt="EmiSafe" class="brand-logo" width="48" height="48" />
         </a>
 
         <button class="mobile-toggle" (click)="toggleMobileMenu()" aria-label="Toggle navigation">
@@ -19,7 +19,7 @@
       <nav class="nav-links" [class.mobile-open]="isMobileMenuOpen">
         <span class="nav-glow" aria-hidden="true"></span>
 
-        @for (item of navItems; track item.link; let idx = $index) {
+        @for (item of navItems(); track item.link; let idx = $index) {
           <a
             [routerLink]="item.link"
             [routerLinkActiveOptions]="{ exact: !!item.exact }"
@@ -41,8 +41,20 @@
         </a>
       </nav>
 
-      <!-- Right: user dropdown -->
+      <!-- Right: Theme Toggle + Compact Interactive User Pill -->
       <div class="nav-actions">
+        <button
+          type="button"
+          class="theme-toggle-btn"
+          (click)="toggleTheme()"
+          [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+          [title]="theme.isDark() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+        >
+          <span class="material-symbols-outlined theme-icon" [class.is-dark]="theme.isDark()">
+            {{ theme.isDark() ? 'light_mode' : 'dark_mode' }}
+          </span>
+        </button>
+
         <div class="user-menu">
           <button
             #userMenuButton
@@ -50,6 +62,7 @@
             (click)="toggleUserMenu($event)"
             [class.open]="isUserMenuOpen"
             [attr.aria-expanded]="isUserMenuOpen"
+            [title]="(currentUser()?.name || 'Administrator') + ' (' + roleLabel() + ')'"
             aria-haspopup="menu"
           >
             <span class="user-avatar">
@@ -57,8 +70,8 @@
               <span class="avatar-status" aria-hidden="true"></span>
             </span>
             <span class="user-meta">
-              <span class="user-name">{{ currentUser()?.name || 'Administrator' }}</span>
-              <span class="user-role">Administrator</span>
+              <span class="user-name">{{ compactUserName() }}</span>
+              <span class="user-role">{{ roleLabel() }}</span>
             </span>
             <span class="material-symbols-outlined caret">expand_more</span>
           </button>
@@ -70,13 +83,14 @@
                 <div class="dd-id">
                   <span class="dd-name">{{ currentUser()?.name || 'Administrator' }}</span>
                   <span class="dd-email">{{ currentUser()?.email || 'admin@gmail.com' }}</span>
+                  <span class="dd-role-pill">{{ roleLabel() }}</span>
                 </div>
               </div>
 
               <div class="dd-divider"></div>
 
               <div class="dd-group">
-                <span class="dd-label">Navigation</span>
+                <span class="dd-label">Quick Navigation</span>
 
                 <a routerLink="/admin/dashboard" class="dd-item" role="menuitem" style="--i:0" (click)="closeUserMenu()">
                   <span class="material-symbols-outlined">space_dashboard</span>
@@ -84,9 +98,9 @@
                   <span class="material-symbols-outlined dd-arrow">arrow_forward</span>
                 </a>
 
-                <a routerLink="/admin/employees" class="dd-item" role="menuitem" style="--i:1" (click)="closeUserMenu()">
+                <a routerLink="/admin/candidates" class="dd-item" role="menuitem" style="--i:1" (click)="closeUserMenu()">
                   <span class="material-symbols-outlined">badge</span>
-                  <span>Employees</span>
+                  <span>Candidates</span>
                   <span class="material-symbols-outlined dd-arrow">arrow_forward</span>
                 </a>
 
@@ -96,17 +110,31 @@
                   <span class="material-symbols-outlined dd-arrow">arrow_forward</span>
                 </a>
 
-                <a routerLink="/" target="_blank" class="dd-item" role="menuitem" style="--i:3" (click)="closeUserMenu()">
+                @if (isAdmin()) {
+                  <a routerLink="/admin/users" class="dd-item" role="menuitem" style="--i:3" (click)="closeUserMenu()">
+                    <span class="material-symbols-outlined">group</span>
+                    <span>Users</span>
+                    <span class="material-symbols-outlined dd-arrow">arrow_forward</span>
+                  </a>
+                }
+
+                <a routerLink="/" target="_blank" class="dd-item" role="menuitem" style="--i:4" (click)="closeUserMenu()">
                   <span class="material-symbols-outlined">open_in_new</span>
                   <span>Public Portal</span>
                   <span class="material-symbols-outlined dd-arrow">arrow_forward</span>
                 </a>
+
+                <button type="button" class="dd-item" role="menuitem" style="--i:5" (click)="toggleTheme(); closeUserMenu()">
+                  <span class="material-symbols-outlined">{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</span>
+                  <span>{{ theme.isDark() ? 'Light Mode' : 'Dark Mode' }}</span>
+                  <span class="material-symbols-outlined dd-arrow">sync</span>
+                </button>
               </div>
 
               <div class="dd-divider"></div>
 
               <div class="dd-group">
-                <button class="dd-item dd-danger" role="menuitem" style="--i:4" (click)="onLogout()">
+                <button class="dd-item dd-danger" role="menuitem" style="--i:6" (click)="onLogout()">
                   <span class="material-symbols-outlined">logout</span>
                   <span>Sign out</span>
                 </button>

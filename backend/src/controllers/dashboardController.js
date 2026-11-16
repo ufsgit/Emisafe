@@ -11,40 +11,38 @@ async function getDashboardSummary(req, res, next) {
     const totalEmployees = Number(empCount[0].total) || 0;
     const activeEmployees = Number(empCount[0].active) || 0;
 
-    // 2. Total certificates
-    const [certCount] = await db.query('SELECT COUNT(*) AS total FROM certificates');
-    const totalCertificates = Number(certCount[0].total) || 0;
+    // 2-4. Certificate counts in a single scan
+    const [certStatsRows] = await db.query(
+      `SELECT 
+         COUNT(*) AS total,
+         SUM(CASE WHEN status = 'Pass' THEN 1 ELSE 0 END) AS pass_count,
+         SUM(CASE WHEN status = 'Fail' THEN 1 ELSE 0 END) AS fail_count,
+         SUM(CASE WHEN status IN ('Withdrawn', 'Withheld') THEN 1 ELSE 0 END) AS other_status_count,
+         SUM(CASE WHEN status = 'Pass' AND expiry_date >= CURDATE() THEN 1 ELSE 0 END) AS valid_count,
+         SUM(CASE WHEN status = 'Pass' AND expiry_date < CURDATE() THEN 1 ELSE 0 END) AS expired_count,
+         SUM(CASE WHEN status = 'Pass' AND expiry_date >= CURDATE() AND expiry_date <= DATE_ADD(CURDATE(), INTERVAL ? DAY) THEN 1 ELSE 0 END) AS expiring_soon_count,
+         SUM(CASE WHEN approval_status = 'pending' THEN 1 ELSE 0 END) AS pending_approval_count
+       FROM certificates`,
+      [config.EXPIRING_SOON_DAYS]
+    );
+    const stats = certStatsRows[0] || {};
+    const totalCertificates = Number(stats.total) || 0;
+    const passCount = Number(stats.pass_count) || 0;
+    const failCount = Number(stats.fail_count) || 0;
+    const otherStatusCount = Number(stats.other_status_count) || 0;
+    const validCount = Number(stats.valid_count) || 0;
+    const expiredCount = Number(stats.expired_count) || 0;
+    const expiringSoonTotal = Number(stats.expiring_soon_count) || 0;
+    const pendingApprovalCount = Number(stats.pending_approval_count) || 0;
 
-    // 3. Pass / Fail count
-    const [passFailRows] = await db.query(`
-      SELECT 
-        SUM(CASE WHEN status = 'Pass' THEN 1 ELSE 0 END) AS pass_count,
-        SUM(CASE WHEN status = 'Fail' THEN 1 ELSE 0 END) AS fail_count
-      FROM certificates
-    `);
-    const passCount = Number(passFailRows[0].pass_count) || 0;
-    const failCount = Number(passFailRows[0].fail_count) || 0;
-
-    // 4. Valid vs Expired certificates (among Pass certificates)
-    // Valid: status = 'Pass' AND expiry_date >= CURDATE()
-    // Expired: status = 'Pass' AND expiry_date < CURDATE()
-    const [validityRows] = await db.query(`
-      SELECT 
-        SUM(CASE WHEN status = 'Pass' AND expiry_date >= CURDATE() THEN 1 ELSE 0 END) AS valid_count,
-        SUM(CASE WHEN status = 'Pass' AND expiry_date < CURDATE() THEN 1 ELSE 0 END) AS expired_count
-      FROM certificates
-    `);
-    const validCount = Number(validityRows[0].valid_count) || 0;
-    const expiredCount = Number(validityRows[0].expired_count) || 0;
-
-    // 5. Expiring soon certificates list (within next 30 days)
+    // 5. Expiring soon certificates list (within next 30 days) — select only displayed columns
     const [expiringRows] = await db.query(
-      `SELECT c.id, c.certificate_number, c.issue_date, c.expiry_date, c.status,
+      `SELECT c.id, c.certificate_number, c.scope_name, c.expiry_date,
               e.name AS employee_name, e.emirates_id AS employee_emirates_id,
               ct.name AS certificate_type_name
        FROM certificates c
        INNER JOIN employees e ON c.employee_id = e.id
-       INNER JOIN certificate_types ct ON c.certificate_type_id = ct.id
+       LEFT JOIN certificate_types ct ON c.certificate_type_id = ct.id
        WHERE c.status = 'Pass'
          AND c.expiry_date >= CURDATE()
          AND c.expiry_date <= DATE_ADD(CURDATE(), INTERVAL ? DAY)
@@ -54,13 +52,29 @@ async function getDashboardSummary(req, res, next) {
     );
 
     const expiringSoon = expiringRows.map(cert => {
-      const validityInfo = computeCertificateValidity(cert.expiry_date, cert.status);
+      const validityInfo = computeCertificateValidity(cert.expiry_date, 'Pass');
       return {
         ...cert,
-        validity_status: validityInfo.validityStatus,
         days_remaining: validityInfo.daysRemaining
       };
     });
+
+    // 5b. Pending approval — only queried for Certification Managers and only with displayed columns
+    let pendingApproval = [];
+    if (req.admin && req.admin.role === 'certification_manager') {
+      const [pendingRows] = await db.query(
+        `SELECT c.id, c.certificate_number, c.scope_name, c.company_name,
+                e.name AS employee_name, e.emirates_id AS employee_emirates_id,
+                ct.name AS certificate_type_name
+         FROM certificates c
+         INNER JOIN employees e ON c.employee_id = e.id
+         LEFT JOIN certificate_types ct ON c.certificate_type_id = ct.id
+         WHERE c.approval_status = 'pending'
+         ORDER BY c.id DESC
+         LIMIT 10`
+      );
+      pendingApproval = pendingRows;
+    }
 
     // 6. Quarterly trend — last 12 quarters of certificate issues
     const trendStart = (() => {
@@ -72,33 +86,19 @@ async function getDashboardSummary(req, res, next) {
 
     const [trendCertRows] = await db.query(`
       SELECT YEAR(issue_date) AS yr, QUARTER(issue_date) AS qtr,
-             COUNT(*) AS issued,
-             SUM(CASE WHEN status = 'Pass' THEN 1 ELSE 0 END) AS pass_count,
-             SUM(CASE WHEN status = 'Fail' THEN 1 ELSE 0 END) AS fail_count,
-             SUM(CASE WHEN status = 'Pass' AND expiry_date >= CURDATE() THEN 1 ELSE 0 END) AS valid_count,
-             SUM(CASE WHEN status = 'Pass' AND expiry_date < CURDATE() THEN 1 ELSE 0 END) AS expired_count
+             COUNT(*) AS issued
       FROM certificates
       WHERE issue_date >= ?
       GROUP BY yr, qtr
       ORDER BY yr, qtr
     `, [trendStart]);
 
-    // 7. Quarterly trend — last 12 quarters of new employees
-    const [trendEmpRows] = await db.query(`
-      SELECT YEAR(created_at) AS yr, QUARTER(created_at) AS qtr,
-             COUNT(*) AS total
-      FROM employees
-      WHERE created_at >= ?
-      GROUP BY yr, qtr
-      ORDER BY yr, qtr
-    `, [trendStart]);
-
-    // 8. Certificates grouped by type
+    // 7. Certificates grouped by scope (including manual/Other scopes)
     const [typeRows] = await db.query(`
-      SELECT ct.name AS name, COUNT(*) AS total
+      SELECT COALESCE(ct.name, c.scope_name, 'Other') AS name, COUNT(*) AS total
       FROM certificates c
-      INNER JOIN certificate_types ct ON c.certificate_type_id = ct.id
-      GROUP BY ct.id, ct.name
+      LEFT JOIN certificate_types ct ON c.certificate_type_id = ct.id
+      GROUP BY COALESCE(ct.name, c.scope_name, 'Other')
       ORDER BY total DESC
       LIMIT 8
     `);
@@ -107,8 +107,6 @@ async function getDashboardSummary(req, res, next) {
     const QUARTER_LABELS = ['Q1', 'Q2', 'Q3', 'Q4'];
     const certByQuarter = {};
     trendCertRows.forEach(r => { certByQuarter[`${r.yr}-Q${r.qtr}`] = r; });
-    const empByQuarter = {};
-    trendEmpRows.forEach(r => { empByQuarter[`${r.yr}-Q${r.qtr}`] = r; });
 
     const trend = [];
     const now = new Date();
@@ -119,16 +117,9 @@ async function getDashboardSummary(req, res, next) {
       const qtr = (totalQ % 4) + 1;
       const key = `${yr}-Q${qtr}`;
       const c = certByQuarter[key] || {};
-      const e = empByQuarter[key] || {};
       trend.push({
-        key,
         label: `${QUARTER_LABELS[qtr - 1]} '${String(yr).slice(2)}`,
-        issued: Number(c.issued) || 0,
-        pass: Number(c.pass_count) || 0,
-        fail: Number(c.fail_count) || 0,
-        valid: Number(c.valid_count) || 0,
-        expired: Number(c.expired_count) || 0,
-        newEmployees: Number(e.total) || 0
+        issued: Number(c.issued) || 0
       });
     }
 
@@ -146,13 +137,16 @@ async function getDashboardSummary(req, res, next) {
           totalCertificates,
           passCount,
           failCount,
+          otherStatusCount,
           validCount,
           expiredCount,
-          expiringSoonCount: expiringSoon.length
+          expiringSoonCount: expiringSoonTotal,
+          pendingApprovalCount
         },
         trend,
         byType,
-        expiringSoon
+        expiringSoon,
+        pendingApproval
       }
     });
   } catch (error) {

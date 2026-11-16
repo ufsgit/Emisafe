@@ -1,0 +1,317 @@
+<div class="emp-detail-page">
+  <!-- Back button & Header -->
+  <div class="page-top-nav">
+    <a routerLink="/admin/candidates" class="btn btn-outline btn-sm">
+      <span class="material-symbols-outlined">arrow_back</span>
+      Back
+    </a>
+  </div>
+
+  @if (isLoading()) {
+    <div class="empty-state">
+      <span class="spinner"></span>
+      <p>Loading candidate record...</p>
+    </div>
+  } @else if (candidate(); as emp) {
+    <!-- Candidate Profile Banner -->
+    <div class="profile-card">
+      <div class="profile-header">
+        <div class="profile-avatar">
+          @if (emp.photo) {
+            <img class="profile-avatar-img" [src]="emp.photo" [alt]="emp.name" />
+          } @else {
+            <span class="material-symbols-outlined">person</span>
+          }
+        </div>
+        <div class="profile-title-area">
+          <div class="profile-name-row">
+            <h1 class="emp-name">{{ emp.name }}</h1>
+            <span class="badge" [class.badge-active]="emp.is_active" [class.badge-inactive]="!emp.is_active">
+              {{ emp.is_active ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
+          <p class="emp-title-text">
+            @if (emp.job_title) {
+              <span>{{ emp.job_title }}</span>
+            }
+            @if (emp.job_title && emp.company) {
+              <span class="title-sep">&middot;</span>
+            }
+            @if (emp.company) {
+              <span class="current-company">{{ emp.company }}</span>
+            }
+          </p>
+          @if (emp.previous_company) {
+            <p class="prev-company">Previous company: <strong>{{ emp.previous_company }}</strong></p>
+          }
+        </div>
+        <div class="profile-actions">
+          <a [routerLink]="['/admin/certificates']" [queryParams]="{ employee_id: emp.id }" class="btn btn-primary btn-sm">
+            <span class="material-symbols-outlined">add</span>
+            Issue Certificate
+          </a>
+        </div>
+      </div>
+
+      <!-- Profile Details Grid -->
+      <div class="profile-details-grid">
+        <div class="detail-item">
+          <span class="detail-label">Emirates ID</span>
+          <span class="detail-value font-mono">{{ emp.emirates_id }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Current Company</span>
+          <span class="detail-value">{{ emp.company || 'N/A' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Email</span>
+          <span class="detail-value">{{ emp.email || 'N/A' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Phone</span>
+          <span class="detail-value">{{ emp.phone || 'N/A' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Nationality</span>
+          <span class="detail-value">{{ emp.nationality || 'N/A' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Gender</span>
+          <span class="detail-value">{{ emp.gender || 'N/A' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Date of Birth</span>
+          <span class="detail-value">{{ emp.date_of_birth ? (emp.date_of_birth | date:'dd MMM yyyy') : 'N/A' }}</span>
+        </div>
+        <div class="detail-item full-width">
+          <span class="detail-label">Address</span>
+          <span class="detail-value">{{ emp.address || 'N/A' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documents Section -->
+    <div class="docs-card">
+      <div class="card-header">
+        <div class="title-with-badge">
+          <span class="material-symbols-outlined">folder_open</span>
+          <h2>Documents ({{ documents().length }})</h2>
+        </div>
+      </div>
+
+      <div class="doc-upload-row">
+        <select [(ngModel)]="docType" class="form-control doc-type-select">
+          @for (t of docTypes; track t) {
+            <option [value]="t">{{ t }}</option>
+          }
+        </select>
+
+        <label class="btn btn-outline btn-sm file-picker-btn" for="candidate-doc-input">
+          <span class="material-symbols-outlined">attach_file</span>
+          Choose files
+        </label>
+        <input
+          id="candidate-doc-input"
+          type="file"
+          multiple
+          class="visually-hidden-input"
+          (change)="onFilesSelected($event)"
+        />
+
+        <span class="field-hint">
+          @if (pendingFiles().length) {
+            {{ pendingFiles().length }} file(s) selected
+          } @else {
+            No files selected
+          }
+        </span>
+
+        <button
+          type="button"
+          class="btn btn-primary btn-sm"
+          (click)="uploadDocuments()"
+          [disabled]="!pendingFiles().length || isUploading()"
+        >
+          @if (isUploading()) {
+            <span class="spinner"></span>
+            <span>Uploading...</span>
+          } @else {
+            <span class="material-symbols-outlined">upload</span>
+            <span>Upload</span>
+          }
+        </button>
+      </div>
+
+      @if (pendingFiles().length) {
+        <ul class="pending-file-list">
+          @for (f of pendingFiles(); track f.name; let i = $index) {
+            <li>
+              <span class="material-symbols-outlined">description</span>
+              <span class="file-name" [title]="f.name">{{ f.name }}</span>
+              <button type="button" class="file-remove" (click)="removePendingFile(i)" title="Remove">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+
+      <div class="docs-grid">
+        <!-- The candidate photo itself -->
+        @if (candidate()?.photo) {
+          <div class="doc-tile doc-tile-photo">
+            <img class="doc-photo-img" [src]="candidate()!.photo" [alt]="candidate()!.name" />
+            <div class="doc-meta">
+              <span class="doc-type">Profile Photo</span>
+              <span class="doc-name" [title]="candidate()!.name">{{ candidate()!.name }}</span>
+            </div>
+          </div>
+        }
+
+        @for (doc of documents(); track doc.id) {
+          <div class="doc-tile">
+            <div class="doc-icon">
+              <span class="material-symbols-outlined">{{ docIcon(doc.doc_type) }}</span>
+            </div>
+            <div class="doc-meta">
+              <span class="doc-type">{{ doc.doc_type }}</span>
+              <span class="doc-name" [title]="doc.file_name">{{ doc.file_name }}</span>
+              <span class="doc-date">{{ doc.created_at ? (doc.created_at | date:'dd MMM yyyy') : '' }}</span>
+            </div>
+            <div class="doc-actions">
+              <a class="action-btn" [href]="docUrl(doc.file_path)" target="_blank" rel="noopener" title="View document">
+                <span class="material-symbols-outlined">visibility</span>
+              </a>
+              <button type="button" class="action-btn action-btn-delete" (click)="confirmDeleteDoc(doc)" title="Delete document">
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (documents().length === 0 && !candidate()?.photo) {
+          <div class="empty-state docs-empty">
+            <span class="material-symbols-outlined empty-icon">draft</span>
+            <h4>No documents uploaded</h4>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Certificates grouped by company (previous + current both visible) -->
+    <div class="cert-history-card">
+      <div class="card-header">
+        <div class="title-with-badge">
+          <span class="material-symbols-outlined">history_edu</span>
+          <h2>Certificates ({{ certificates().length }})</h2>
+        </div>
+      </div>
+
+      @if (certificates().length === 0) {
+        <div class="empty-state">
+          <span class="material-symbols-outlined empty-icon">workspace_premium</span>
+          <h4>No certificates issued</h4>
+        </div>
+      } @else {
+        @for (group of certGroups(); track group.company) {
+          <div class="cert-group">
+            <div class="cert-group-head">
+              <span class="material-symbols-outlined">business</span>
+              <h3>{{ group.title }}</h3>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Certificate #</th>
+                    <th>Certification Scope</th>
+                    <th>Issue Date</th>
+                    <th>Expiry Date</th>
+                    <th>Certification Status</th>
+                    <th>Validity</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (cert of group.items; track cert.id) {
+                    <tr>
+                      <td>
+                        <span class="font-mono font-bold">{{ cert.certificate_number }}</span>
+                      </td>
+                      <td>
+                        <strong>{{ cert.scope_name || cert.certificate_type_name }}</strong>
+                        @if (cert.accreditation_status) {
+                          <div class="text-muted text-xs">{{ cert.accreditation_status }}</div>
+                        }
+                      </td>
+                      <td>{{ cert.issue_date | date:'dd MMM yyyy' }}</td>
+                      <td>
+                        <span [class.text-red]="!cert.is_valid" class="font-bold">
+                          {{ cert.expiry_date | date:'dd MMM yyyy' }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="badge" [ngClass]="cert.status === 'Pass' ? 'badge-pass' : 'badge-fail'">
+                          {{ cert.status }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="badge" [ngClass]="'badge-' + cert.validity_status.toLowerCase().replace(' ', '-')">
+                          {{ cert.validity_status }}
+                        </span>
+                      </td>
+                      <td>
+                        <a [routerLink]="['/']" [queryParams]="{ certificate: cert.certificate_number }" target="_blank" class="btn btn-outline btn-sm">
+                          <span class="material-symbols-outlined">open_in_new</span>
+                          Verify
+                        </a>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Delete document confirmation -->
+    @if (showDocDeleteModal()) {
+      <div class="modal-backdrop" (click)="closeDocDeleteModal()">
+        <div class="modal-card confirm-modal delete-modal" (click)="$event.stopPropagation()">
+          <div class="modal-header modal-header-danger">
+            <h3>
+              <span class="material-symbols-outlined">delete_forever</span>
+              Delete Document
+            </h3>
+            <button class="close-btn" (click)="closeDocDeleteModal()">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>
+              You're about to delete <strong>{{ selectedDoc()?.file_name }}</strong> ({{ selectedDoc()?.doc_type }}).
+            </p>
+            <div class="danger-note">
+              <span class="material-symbols-outlined">warning</span>
+              <span>The uploaded file will be removed permanently. This action cannot be undone.</span>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" (click)="closeDocDeleteModal()" [disabled]="isDeletingDoc()">Cancel</button>
+            <button type="button" class="btn btn-danger" (click)="executeDeleteDoc()" [disabled]="isDeletingDoc()">
+              @if (isDeletingDoc()) {
+                <span class="spinner"></span>
+                <span>Deleting...</span>
+              } @else {
+                <span class="material-symbols-outlined">delete</span>
+                <span>Delete</span>
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div>

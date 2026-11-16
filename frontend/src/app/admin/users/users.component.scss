@@ -1,0 +1,152 @@
+.users-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toolbar-card {
+  background: #ffffff;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+    font-size: 18px;
+  }
+
+  .search-input {
+    height: 34px;
+    padding-left: 36px;
+    font-size: 0.83rem;
+  }
+}
+
+.row-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #E3E8EE;
+}
+
+.row-avatar-fallback {
+  color: var(--primary-navy);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.role-chip {
+  background: #F1F5FD;
+  color: var(--text-secondary);
+  padding: 2.5px 9px;
+  border-radius: 6px;
+  font-size: 0.71rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid var(--border-color);
+
+  &.role-admin {
+    background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+    color: var(--primary-navy);
+    border-color: rgba(99, 102, 241, 0.25);
+  }
+
+  &.role-certification_manager {
+    background: var(--success-green-light);
+    color: var(--success-green);
+    border-color: rgba(16, 185, 129, 0.28);
+  }
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 18px;
+  align-items: start;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+
+  .full-width {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Photo upload with preview */
+.photo-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.photo-preview {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+}
+
+.photo-preview-empty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #E3E8EE;
+  color: var(--primary-navy);
+
+  .material-symbols-outlined {
+    font-size: 28px;
+  }
+}
+
+.file-picker-btn {
+  cursor: pointer;
+}
+
+.visually-hidden-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.confirm-modal {
+  max-width: 440px;
+}

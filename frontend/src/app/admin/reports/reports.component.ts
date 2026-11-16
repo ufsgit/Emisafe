@@ -54,7 +54,7 @@ export class ReportsComponent implements OnInit {
         },
         error: () => {
           this.isLoading.set(false);
-          this.toast.error('Failed to load employee-wise report.');
+          this.toast.error('Failed to load candidate-wise report.');
         }
       });
     } else {
@@ -71,7 +71,7 @@ export class ReportsComponent implements OnInit {
         },
         error: () => {
           this.isLoading.set(false);
-          this.toast.error('Failed to load certificate type report.');
+          this.toast.error('Failed to load certification scope report.');
         }
       });
     }
@@ -87,10 +87,10 @@ export class ReportsComponent implements OnInit {
   exportCsv(): void {
     if (this.activeTab() === 'employee') {
       this.reportService.downloadEmployeeWiseCsv();
-      this.toast.success('Downloading employee-wise report CSV...');
+      this.toast.success('Downloading candidate-wise report CSV...');
     } else {
       this.reportService.downloadTypeWiseCsv();
-      this.toast.success('Downloading certificate type report CSV...');
+      this.toast.success('Downloading certification scope report CSV...');
     }
   }
 }

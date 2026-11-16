@@ -1,0 +1,87 @@
+<div class="login-history-page">
+  <!-- Search Toolbar -->
+  <div class="toolbar-card">
+    <div class="search-box">
+      <span class="material-symbols-outlined search-icon">search</span>
+      <input 
+        type="text" 
+        [(ngModel)]="search" 
+        (ngModelChange)="onSearchChange()" 
+        placeholder="Search by name or email..."
+        class="form-control search-input"
+      />
+    </div>
+
+    <span class="record-count">{{ totalCount() }} logins recorded</span>
+  </div>
+
+  <!-- Table -->
+  <div class="table-container">
+    @if (isLoading()) {
+      <div class="empty-state">
+        <span class="spinner"></span>
+        <p>Loading login history...</p>
+      </div>
+    } @else if (entries().length === 0) {
+      <div class="empty-state">
+        <span class="material-symbols-outlined empty-icon">history</span>
+        <h4>No logins found</h4>
+      </div>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>IP</th>
+            <th>Device</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (entry of entries(); track entry.id) {
+            <tr>
+              <td>
+                <span class="font-bold">{{ entry.login_at | date:'dd MMM yyyy HH:mm:ss' }}</span>
+              </td>
+              <td>
+                <div class="cell-truncate" [title]="entry.name">
+                  <strong>{{ entry.name }}</strong>
+                </div>
+              </td>
+              <td>
+                <div class="cell-truncate" [title]="entry.email">{{ entry.email }}</div>
+              </td>
+              <td>
+                <span class="role-chip">{{ roleLabel(entry.role) }}</span>
+              </td>
+              <td>
+                <span class="font-mono text-muted">{{ entry.ip || '—' }}</span>
+              </td>
+              <td>
+                <span class="cell-truncate device-cell" [title]="entry.user_agent">{{ deviceLabel(entry.user_agent) }}</span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination-bar">
+        <div>
+          Showing page {{ currentPage() }} of {{ totalPages() || 1 }} ({{ totalCount() }} total)
+        </div>
+        <div class="pagination-controls">
+          <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() <= 1">
+            Previous
+          </button>
+          <button class="active">{{ currentPage() }}</button>
+          <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() >= totalPages()">
+            Next
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

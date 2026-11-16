@@ -6,10 +6,18 @@
       <div class="header-container">
         <div class="logo-container">
           <a routerLink="/" class="logo-link">
-            <img src="/assets/logo/logo-white.svg" alt="EmiSafe" width="56" height="56" class="header-logo" priority />
+            <img [src]="theme.isDark() ? '/assets/logo/logo-white-transparent.svg' : '/assets/logo/logo-navy.svg'"
+              alt="EmiSafe" width="56" height="56" class="header-logo" priority />
           </a>
         </div>
         <div class="header-actions">
+          <button type="button" class="btn-theme-nav" (click)="theme.toggle()"
+            [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+            [title]="theme.isDark() ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+            <span class="material-symbols-outlined">
+              {{ theme.isDark() ? 'light_mode' : 'dark_mode' }}
+            </span>
+          </button>
           <a routerLink="/admin/login" class="btn-admin-nav">
             <span class="material-symbols-outlined">admin_panel_settings</span>
             Admin Portal
@@ -39,7 +47,7 @@
             <div class="search-input-group">
               <span class="material-symbols-outlined search-icon">search</span>
               <input type="text" name="certificateNumber" [(ngModel)]="searchQuery"
-                placeholder="Enter certificate number, e.g. CERT-2026-08912" class="search-input" required
+                placeholder="Enter Certificate Number or Emirates ID..." class="search-input" required
                 autocomplete="off" spellcheck="false" />
               <div class="search-actions">
                 <button type="button" class="btn-scan-qr" (click)="startQrScan()" title="Scan QR Code with Camera">
@@ -141,25 +149,33 @@
           </div>
 
           <div class="card-body">
-            <!-- Section 1: Employee Information -->
+            <!-- Section 1: Candidate Information -->
             <div class="info-section">
               <h3 class="section-title">
                 <span class="material-symbols-outlined">person</span>
-                Employee Information
+                Candidate Information
               </h3>
               <div class="info-grid employee-grid">
                 <div class="info-item">
-                  <span class="item-label">Employee Name</span>
+                  <span class="item-label">Candidate Name</span>
                   <span class="item-value highlight-value">{{ res.employee.name }}</span>
                 </div>
                 <div class="info-item">
                   <span class="item-label">Emirates ID (Masked)</span>
                   <span class="item-value font-mono">{{ res.employee.emirates_id_masked }}</span>
                 </div>
+                @if (res.employee.company || res.certificate.company_name) {
                 <div class="info-item">
-                  <span class="item-label">Job Title / Designation</span>
+                  <span class="item-label">Company</span>
+                  <span class="item-value">{{ res.certificate.company_name || res.employee.company }}</span>
+                </div>
+                }
+                @if (res.employee.job_title) {
+                <div class="info-item">
+                  <span class="item-label">Designation</span>
                   <span class="item-value">{{ res.employee.job_title }}</span>
                 </div>
+                }
               </div>
             </div>
 
@@ -173,20 +189,38 @@
               </h3>
               <div class="info-grid cert-grid">
                 <div class="info-item full-width">
-                  <span class="item-label">Certificate Type</span>
-                  <span class="item-value cert-name-value">{{ res.certificate.certificate_type }}</span>
+                  <span class="item-label">Certification Scope</span>
+                  <span class="item-value cert-name-value">{{ res.certificate.scope_name ||
+                    res.certificate.certificate_type }}</span>
                 </div>
+                @if (res.certificate.accreditation_status) {
+                <div class="info-item">
+                  <span class="item-label">Accreditation</span>
+                  <span class="item-value">{{ res.certificate.accreditation_status }}</span>
+                </div>
+                }
+                @if (res.certificate.company_name) {
+                <div class="info-item">
+                  <span class="item-label">Company</span>
+                  <span class="item-value">{{ res.certificate.company_name }}</span>
+                </div>
+                }
                 <div class="info-item">
                   <span class="item-label">Certificate Number</span>
                   <span class="item-value font-mono">{{ res.certificate.certificate_number }}</span>
                 </div>
                 <div class="info-item">
-                  <span class="item-label">Examination Status</span>
-                  <span class="badge"
-                    [ngClass]="res.certificate.certificate_status === 'Pass' ? 'badge-pass' : 'badge-fail'">
+                  <span class="item-label">Certification Status</span>
+                  <span class="badge cert-status" [ngClass]="certStatusClass(res.certificate.certificate_status)">
                     {{ res.certificate.certificate_status }}
                   </span>
                 </div>
+                @if (res.certificate.approval_status === 'pending') {
+                <div class="info-item">
+                  <span class="item-label">Approval</span>
+                  <span class="badge badge-pending">Pending Approval</span>
+                </div>
+                }
                 <div class="info-item">
                   <span class="item-label">Issue Date</span>
                   <span class="item-value">{{ res.certificate.issue_date | date:'dd MMM yyyy' }}</span>
@@ -197,18 +231,6 @@
                     {{ res.certificate.expiry_date | date:'dd MMM yyyy' }}
                   </span>
                 </div>
-                @if (res.certificate.description) {
-                <div class="info-item full-width">
-                  <span class="item-label">Description</span>
-                  <span class="item-value text-desc">{{ res.certificate.description }}</span>
-                </div>
-                }
-                @if (res.certificate.scope) {
-                <div class="info-item full-width">
-                  <span class="item-label">Scope</span>
-                  <span class="item-value text-desc">{{ res.certificate.scope }}</span>
-                </div>
-                }
               </div>
             </div>
 
@@ -276,7 +298,8 @@
   <footer class="public-footer">
     <div class="footer-container">
       <div class="footer-logo-block">
-        <img src="/assets/logo/logo-white.svg" alt="EmiSafe Logo" width="40" height="40" class="footer-logo" />
+        <img [src]="theme.isDark() ? '/assets/logo/logo-icon-transparent.svg' : '/assets/logo/logo-navy.svg'"
+          alt="EmiSafe Logo" width="40" height="40" class="footer-logo" />
         <p class="footer-copy">
           &copy; {{ currentYear }} EmiSafe. All rights reserved.
         </p>

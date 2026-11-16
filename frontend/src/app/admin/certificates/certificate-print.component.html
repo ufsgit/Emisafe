@@ -1,0 +1,113 @@
+<div class="print-page">
+  <!-- Screen-only toolbar (hidden when printing) -->
+  <div class="print-toolbar no-print">
+    <a routerLink="/admin/certificates" class="btn btn-outline btn-sm">
+      <span class="material-symbols-outlined">arrow_back</span>
+      Back to certificates
+    </a>
+    <button type="button" class="btn btn-primary" (click)="print()">
+      <span class="material-symbols-outlined">print</span>
+      Print
+    </button>
+  </div>
+
+  @if (isLoading()) {
+    <div class="empty-state no-print">
+      <span class="spinner"></span>
+      <p>Loading certificate...</p>
+    </div>
+  } @else if (loadError()) {
+    <div class="empty-state no-print">
+      <span class="material-symbols-outlined empty-icon">error</span>
+      <h4>{{ loadError() }}</h4>
+    </div>
+  } @else if (doc(); as d) {
+    <div class="format-banner no-print">
+      <span class="material-symbols-outlined">info</span>
+      @if (activeFormat(); as fmt) {
+        <span>Client Certificate Format Active: <strong>{{ fmt.file_name }}</strong></span>
+        <a [href]="fmt.file_path" target="_blank" rel="noopener" class="format-link">View Raw Format</a>
+      } @else {
+        <span>Demo Certificate Format — Using default demo layout until the client format is uploaded.</span>
+      }
+    </div>
+
+    <!-- A4 certificate sheet -->
+    <div
+      class="a4-sheet"
+      [class.has-custom-bg]="activeFormat()?.mime_type?.startsWith('image/')"
+      [style.background-image]="activeFormat()?.mime_type?.startsWith('image/') ? 'url(' + activeFormat()!.file_path + ')' : null"
+    >
+      <div class="sheet-border">
+        <header class="cert-head">
+          <img src="/assets/logo/logo-navy.svg" alt="EmiSafe" class="cert-logo" />
+          <div class="cert-title-block">
+            <div class="cert-title">Certificate of Certification</div>
+            <div class="cert-sub">EmiSafe Certification Services</div>
+          </div>
+          <div class="cert-photo">
+            @if (d.candidatePhoto) {
+              <img [src]="d.candidatePhoto" [alt]="d.candidateName" />
+            } @else {
+              <span class="material-symbols-outlined">person</span>
+            }
+          </div>
+        </header>
+
+        <div class="cert-body">
+          <p class="cert-lead">This is to certify that</p>
+          <p class="cert-name">{{ d.candidateName }}</p>
+          <p class="cert-eid">Emirates ID: <span class="font-mono">{{ d.emiratesIdMasked }}</span></p>
+
+          <p class="cert-lead">has successfully met the requirements of</p>
+          <p class="cert-scope">{{ d.scope }}</p>
+
+          <table class="cert-details">
+            <tbody>
+              <tr>
+                <th>Accreditation</th>
+                <td>{{ d.accreditation || '—' }}</td>
+                <th>Certificate Number</th>
+                <td class="font-mono font-bold">{{ d.number }}</td>
+              </tr>
+              <tr>
+                <th>Company</th>
+                <td>{{ d.company || '—' }}</td>
+                <th>Certification Status</th>
+                <td>{{ d.status }}</td>
+              </tr>
+              <tr>
+                <th>Issue Date</th>
+                <td>{{ d.issueDate | date:'dd MMM yyyy' }}</td>
+                <th>Expiry Date</th>
+                <td>{{ d.expiryDate | date:'dd MMM yyyy' }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="cert-bottom">
+            <div class="qr-block">
+              @if (qrDataUrl()) {
+                <img class="qr-img" [src]="qrDataUrl()" alt="Verification QR code" />
+              } @else {
+                <div class="qr-placeholder"></div>
+              }
+              <span class="qr-caption">Scan to verify this certificate</span>
+            </div>
+
+            <div class="signature-block">
+              <div class="sig-line"></div>
+              <span class="sig-role">Authorised Signatory</span>
+              <span class="sig-org">EmiSafe Certification Services</span>
+            </div>
+          </div>
+        </div>
+
+        <footer class="cert-foot">
+          <span>Printed on: {{ today | date:'dd MMM yyyy' }}</span>
+          <span class="font-mono">{{ d.number }}</span>
+        </footer>
+      </div>
+    </div>
+  }
+</div>

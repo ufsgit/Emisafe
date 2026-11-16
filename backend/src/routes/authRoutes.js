@@ -1,7 +1,7 @@
 const express = require('express');
 const { body } = require('express-validator');
 const authController = require('../controllers/authController');
-const { authenticateAdmin } = require('../middleware/auth');
+const { authenticateAdmin, requireRole } = require('../middleware/auth');
 const { handleValidationErrors } = require('../middleware/validate');
 
 const router = express.Router();
@@ -19,6 +19,9 @@ router.post(
 router.post('/logout', authController.logout);
 
 router.get('/me', authenticateAdmin, authController.me);
+
+// Only Administrator can view login timestamps (recorded for all users on login)
+router.get('/login-history', authenticateAdmin, requireRole('admin'), authController.loginHistory);
 
 module.exports = router;
 

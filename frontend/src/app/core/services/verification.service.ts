@@ -6,17 +6,21 @@ export interface PublicVerificationResult {
   employee: {
     name: string;
     emirates_id_masked: string;
-    job_title: string;
+    job_title?: string;
+    company?: string | null;
+    photo?: string | null;
   };
   certificate: {
     certificate_number: string;
     certificate_type: string;
+    scope_name?: string;
+    accreditation_status?: 'EIAC' | 'Non-EIAC' | null;
+    company_name?: string | null;
+    approval_status?: 'pending' | 'approved';
     issue_date: string;
     expiry_date: string;
-    certificate_status: 'Pass' | 'Fail';
-    description: string;
-    scope: string;
-    validity_status: 'Valid' | 'Expiring Soon' | 'Expired' | 'Fail';
+    certificate_status: 'Pass' | 'Fail' | 'Withdrawn' | 'Withheld';
+    validity_status: 'Valid' | 'Expiring Soon' | 'Expired' | 'Fail' | 'Withdrawn' | 'Withheld';
     is_valid: boolean;
     days_remaining: number;
   };

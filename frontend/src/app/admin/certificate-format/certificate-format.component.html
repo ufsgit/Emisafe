@@ -1,0 +1,128 @@
+<div class="certificate-format-page">
+
+  <!-- Note -->
+  <div class="format-note">
+    <span class="material-symbols-outlined note-icon">info</span>
+    <span>The final certificate format will be provided by the client. Upload the raw format here — certificates will
+      be generated from it.</span>
+  </div>
+
+  @if (error()) {
+  <div class="alert alert-danger">{{ error() }}</div>
+  }
+
+  <!-- Current raw format -->
+  <div class="toolbar-card">
+    <div class="toolbar-title">
+      <span class="material-symbols-outlined title-icon">description</span>
+      <span>Current raw format</span>
+    </div>
+
+    @if (isLoading()) {
+    <div class="empty-state">
+      <span class="spinner"></span>
+      <p>Loading certificate format...</p>
+    </div>
+    } @else if (formats().length === 0) {
+    <div class="empty-state">
+      <span class="material-symbols-outlined empty-icon">upload_file</span>
+      <h4>No raw format uploaded yet</h4>
+    </div>
+    } @else {
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>Type</th>
+            <th>Size</th>
+            <th>Uploaded By</th>
+            <th>Uploaded On</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (fmt of formats(); track fmt.id; let first = $first) {
+          <tr>
+            <td>
+              @if (isImage(fmt)) {
+              <img class="format-thumb" [src]="fmt.file_path" [alt]="fmt.file_name" />
+              } @else {
+              <span class="material-symbols-outlined file-icon">draft</span>
+              }
+              <span class="cell-truncate font-mono" [title]="fmt.file_name">{{ fmt.file_name }}</span>
+              @if (first) {
+              <span class="badge badge-valid format-badge">Active</span>
+              }
+            </td>
+            <td>
+              <span class="cell-truncate" [title]="fmt.mime_type || ''">{{ fmt.mime_type || 'Unknown' }}</span>
+            </td>
+            <td>
+              <span class="font-mono">{{ formatSize(fmt.file_size) }}</span>
+            </td>
+            <td>
+              <span class="cell-truncate" [title]="fmt.uploaded_by_name || ''">{{ fmt.uploaded_by_name || '—' }}</span>
+            </td>
+            <td>
+              <span class="font-mono">{{ fmt.created_at | date:'dd MMM yyyy HH:mm' }}</span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <a [href]="fmt.file_path" target="_blank" rel="noopener" class="action-btn" title="Download">
+                  <span class="material-symbols-outlined">download</span>
+                </a>
+                @if (auth.isAdmin()) {
+                <button type="button" class="action-btn action-btn-delete" (click)="deleteFormat(fmt)"
+                  [disabled]="isDeleting()" title="Delete">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+                }
+              </div>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </div>
+
+  <!-- Upload control -->
+  @if (auth.isAdmin()) {
+  <div class="toolbar-card">
+    <div class="toolbar-title">
+      <span class="material-symbols-outlined title-icon">upload_file</span>
+      <span>Upload raw format</span>
+    </div>
+
+    <div class="upload-row">
+      <label class="btn btn-outline btn-sm upload-btn" for="certificate-format-input">
+        @if (isUploading()) {
+        <span class="spinner"></span>
+        <span>Uploading...</span>
+        } @else {
+        <span class="material-symbols-outlined">folder_open</span>
+        <span>Choose file</span>
+        }
+      </label>
+      <input id="certificate-format-input" type="file" class="visually-hidden-input" [disabled]="isUploading()"
+        (change)="onFileSelected($event)" />
+      <span class="upload-hint">
+        @if (selectedFileName()) {
+        {{ selectedFileName() }}
+        } @else {
+        Any file type — up to {{ maxFileSizeMb }} MB. The file is stored and used as the certificate format.
+        }
+      </span>
+    </div>
+  </div>
+  } @else {
+  <div class="toolbar-card">
+    <div class="toolbar-title">
+      <span class="material-symbols-outlined title-icon">lock</span>
+      <span>Only administrators can upload or remove the raw certificate format.</span>
+    </div>
+  </div>
+  }
+</div>

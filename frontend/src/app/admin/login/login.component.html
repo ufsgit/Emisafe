@@ -5,7 +5,7 @@
     <aside class="brand-panel">
       <div class="brand-inner">
         <img
-          src="/assets/logo/logo-inverse.svg"
+          src="/assets/logo/logo-white-transparent.svg"
           alt="EmiSafe"
           class="brand-logo"
           width="96"
@@ -19,7 +19,7 @@
           </span>
           <h2 class="brand-headline">Manage credentials with confidence.</h2>
           <p class="brand-sub">
-            Issue, track and audit employee safety certifications — and publish
+            Issue, track and audit candidate safety certifications — and publish
             tamper-proof verifications to the public portal.
           </p>
         </div>
@@ -45,6 +45,19 @@
 
     <!-- ============ Form Panel ============ -->
     <section class="form-panel">
+      <button
+        type="button"
+        class="login-theme-toggle"
+        (click)="theme.toggle()"
+        [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+        [title]="theme.isDark() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+      >
+        <span class="material-symbols-outlined">
+          {{ theme.isDark() ? 'light_mode' : 'dark_mode' }}
+        </span>
+        <span>{{ theme.isDark() ? 'Light' : 'Dark' }}</span>
+      </button>
+
       <div class="form-wrap">
         <div class="form-head">
           <h1 class="login-title">Welcome back</h1>

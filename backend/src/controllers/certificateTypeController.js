@@ -1,25 +1,28 @@
 const db = require('../config/db');
 
+const ACCREDITATION_STATUSES = ['EIAC', 'Non-EIAC'];
+
 async function listCertificateTypes(req, res, next) {
   try {
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 10));
+    const limit = Math.max(1, Math.min(500, parseInt(req.query.limit, 10) || 10));
     const offset = (page - 1) * limit;
     const search = req.query.search ? req.query.search.trim() : '';
     const status = req.query.status; // 'all', 'active', 'inactive'
+    const active = req.query.active; // '1' | '0' (dropdown helper)
 
     const whereClauses = [];
     const params = [];
 
     if (search) {
-      whereClauses.push('(name LIKE ? OR category LIKE ? OR description LIKE ?)');
+      whereClauses.push('(name LIKE ? OR accreditation_status LIKE ?)');
       const term = `%${search}%`;
-      params.push(term, term, term);
+      params.push(term, term);
     }
 
-    if (status === 'active') {
+    if (status === 'active' || active === '1') {
       whereClauses.push('is_active = 1');
-    } else if (status === 'inactive') {
+    } else if (status === 'inactive' || active === '0') {
       whereClauses.push('is_active = 0');
     }
 
@@ -33,11 +36,10 @@ async function listCertificateTypes(req, res, next) {
     const total = countRows[0].total;
 
     const [rows] = await db.query(
-      `SELECT ct.*, 
-              (SELECT COUNT(*) FROM certificates c WHERE c.certificate_type_id = ct.id) AS certificates_count
+      `SELECT ct.id, ct.name, ct.accreditation_status, ct.is_active
        FROM certificate_types ct
        ${whereSql}
-       ORDER BY ct.created_at DESC
+       ORDER BY ct.id DESC
        LIMIT ? OFFSET ?`,
       [...params, limit, offset]
     );
@@ -62,11 +64,14 @@ async function listCertificateTypes(req, res, next) {
 async function getCertificateTypeById(req, res, next) {
   try {
     const { id } = req.params;
-    const [rows] = await db.query('SELECT * FROM certificate_types WHERE id = ?', [id]);
+    const [rows] = await db.query(
+      'SELECT id, name, accreditation_status, is_active FROM certificate_types WHERE id = ?',
+      [id]
+    );
     if (rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Certificate type not found.'
+        message: 'Certification scope not found.'
       });
     }
 
@@ -83,33 +88,41 @@ async function getCertificateTypeById(req, res, next) {
 
 async function createCertificateType(req, res, next) {
   try {
-    const { name, category, description, scope, is_active } = req.body;
+    const { name, accreditation_status, is_active } = req.body;
+
+    if (accreditation_status !== undefined && !ACCREDITATION_STATUSES.includes(accreditation_status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Accreditation status must be 'EIAC' or 'Non-EIAC'."
+      });
+    }
 
     const [existing] = await db.query('SELECT id FROM certificate_types WHERE name = ?', [name]);
     if (existing.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'A certificate type with this name already exists.'
+        message: 'A certification scope with this name already exists.'
       });
     }
 
     const [result] = await db.query(
-      `INSERT INTO certificate_types (name, category, description, scope, is_active)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO certificate_types (name, accreditation_status, is_active)
+       VALUES (?, ?, ?)`,
       [
         name,
-        category || null,
-        description || null,
-        scope || null,
+        accreditation_status || 'EIAC',
         is_active !== undefined ? (is_active ? 1 : 0) : 1
       ]
     );
 
-    const [created] = await db.query('SELECT * FROM certificate_types WHERE id = ?', [result.insertId]);
+    const [created] = await db.query(
+      'SELECT id, name, accreditation_status, is_active FROM certificate_types WHERE id = ?',
+      [result.insertId]
+    );
 
     return res.status(201).json({
       success: true,
-      message: 'Certificate type created successfully.',
+      message: 'Certification scope created successfully.',
       data: {
         certificateType: created[0]
       }
@@ -122,50 +135,61 @@ async function createCertificateType(req, res, next) {
 async function updateCertificateType(req, res, next) {
   try {
     const { id } = req.params;
-    const { name, category, description, scope, is_active } = req.body;
+    const { name, accreditation_status, is_active } = req.body;
 
-    const [existing] = await db.query('SELECT id FROM certificate_types WHERE id = ?', [id]);
+    const [existing] = await db.query(
+      'SELECT id, name, accreditation_status, is_active FROM certificate_types WHERE id = ?',
+      [id]
+    );
     if (existing.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Certificate type not found.'
+        message: 'Certification scope not found.'
+      });
+    }
+    const current = existing[0];
+
+    if (accreditation_status !== undefined && !ACCREDITATION_STATUSES.includes(accreditation_status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Accreditation status must be 'EIAC' or 'Non-EIAC'."
       });
     }
 
+    const newName = name !== undefined ? name : current.name;
     const [conflict] = await db.query(
       'SELECT id FROM certificate_types WHERE name = ? AND id != ?',
-      [name, id]
+      [newName, id]
     );
     if (conflict.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'Another certificate type with this name already exists.'
+        message: 'Another certification scope with this name already exists.'
       });
     }
 
     await db.query(
       `UPDATE certificate_types SET
         name = ?,
-        category = ?,
-        description = ?,
-        scope = ?,
+        accreditation_status = ?,
         is_active = ?
        WHERE id = ?`,
       [
-        name,
-        category || null,
-        description || null,
-        scope || null,
-        is_active !== undefined ? (is_active ? 1 : 0) : 1,
+        newName,
+        accreditation_status !== undefined ? accreditation_status : current.accreditation_status,
+        is_active !== undefined ? (is_active ? 1 : 0) : current.is_active,
         id
       ]
     );
 
-    const [updated] = await db.query('SELECT * FROM certificate_types WHERE id = ?', [id]);
+    const [updated] = await db.query(
+      'SELECT id, name, accreditation_status, is_active FROM certificate_types WHERE id = ?',
+      [id]
+    );
 
     return res.json({
       success: true,
-      message: 'Certificate type updated successfully.',
+      message: 'Certification scope updated successfully.',
       data: {
         certificateType: updated[0]
       }
@@ -182,7 +206,7 @@ async function toggleCertificateTypeStatus(req, res, next) {
     if (existing.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Certificate type not found.'
+        message: 'Certification scope not found.'
       });
     }
 
@@ -191,7 +215,7 @@ async function toggleCertificateTypeStatus(req, res, next) {
 
     return res.json({
       success: true,
-      message: `Certificate type ${newStatus ? 'activated' : 'deactivated'} successfully.`,
+      message: `Certification scope ${newStatus ? 'activated' : 'deactivated'} successfully.`,
       data: {
         id: parseInt(id, 10),
         is_active: newStatus
@@ -209,4 +233,3 @@ module.exports = {
   updateCertificateType,
   toggleCertificateTypeStatus
 };
-

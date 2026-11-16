@@ -1,0 +1,135 @@
+<div class="alternate-page">
+  <!-- Screen-only toolbar (hidden when printing) -->
+  <div class="print-toolbar no-print">
+    <a routerLink="/admin/certificates" class="btn btn-outline btn-sm">
+      <span class="material-symbols-outlined">arrow_back</span>
+      Back to certificates
+    </a>
+    <button type="button" class="btn btn-primary" (click)="print()">
+      <span class="material-symbols-outlined">print</span>
+      Print
+    </button>
+  </div>
+
+  @if (isLoading()) {
+    <div class="empty-state no-print">
+      <span class="spinner"></span>
+      <p>Loading certificate...</p>
+    </div>
+  } @else if (loadError()) {
+    <div class="empty-state no-print">
+      <span class="material-symbols-outlined empty-icon">error</span>
+      <h4>{{ loadError() }}</h4>
+    </div>
+  } @else if (doc(); as d) {
+    <!-- Format reference — the raw format uploaded by the admin -->
+    @if (activeFormat(); as fmt) {
+    <div class="format-reference no-print">
+      <div class="format-reference-head">
+        <span class="material-symbols-outlined">description</span>
+        <span class="format-reference-title">Format reference</span>
+        <span class="badge badge-valid">Client Format</span>
+      </div>
+      <div class="format-reference-body">
+        @if (fmt.mime_type && fmt.mime_type.startsWith('image/')) {
+        <img class="format-reference-preview" [src]="fmt.file_path" [alt]="fmt.file_name" />
+        }
+        <div class="format-reference-meta">
+          <span class="font-bold">{{ fmt.file_name }}</span>
+          <span class="text-muted text-xs">{{ fmt.mime_type || 'Unknown type' }}</span>
+          @if (fmt.uploaded_by_name) {
+          <span class="text-muted text-xs">Uploaded by {{ fmt.uploaded_by_name }}</span>
+          }
+        </div>
+        <a [href]="fmt.file_path" target="_blank" rel="noopener" class="btn btn-outline btn-sm format-reference-link">
+          <span class="material-symbols-outlined">download</span>
+          Download
+        </a>
+      </div>
+    </div>
+    }
+
+    <p class="provisional-note no-print">
+      <span class="material-symbols-outlined">info</span>
+      <span>Demo layout — the final certificate format will be provided by the client.</span>
+    </p>
+
+    <!-- Alternate certificate format -->
+    <div
+      class="alt-card"
+      [class.has-custom-bg]="activeFormat()?.mime_type?.startsWith('image/')"
+      [style.background-image]="activeFormat()?.mime_type?.startsWith('image/') ? 'url(' + activeFormat()!.file_path + ')' : null"
+    >
+      <div class="alt-head">
+        <img src="/assets/logo/logo-navy.svg" alt="EmiSafe" class="alt-logo" />
+        <div class="alt-head-title">
+          <span class="alt-org">EmiSafe Certification Services</span>
+          <span class="alt-kind">Certificate of Competency</span>
+        </div>
+        <span class="provisional-tag no-print">{{ activeFormat() ? 'Client Format' : 'Demo Format' }}</span>
+      </div>
+
+      <div class="alt-body">
+        <div class="alt-photo">
+          @if (d.candidatePhoto) {
+            <img [src]="d.candidatePhoto" [alt]="d.candidateName" />
+          } @else {
+            <span class="material-symbols-outlined">person</span>
+          }
+        </div>
+
+        <div class="alt-info">
+          <div class="alt-name">{{ d.candidateName }}</div>
+          <div class="alt-row">
+            <span class="alt-label">Emirates ID</span>
+            <span class="alt-value font-mono">{{ d.emiratesIdMasked }}</span>
+          </div>
+          <div class="alt-row">
+            <span class="alt-label">Scope</span>
+            <span class="alt-value">{{ d.scope }}</span>
+          </div>
+          <div class="alt-row">
+            <span class="alt-label">Company</span>
+            <span class="alt-value">{{ d.company || '—' }}</span>
+          </div>
+          <div class="alt-row">
+            <span class="alt-label">Accreditation</span>
+            <span class="alt-value">{{ d.accreditation || '—' }}</span>
+          </div>
+          <div class="alt-row">
+            <span class="alt-label">Status</span>
+            <span class="alt-value">{{ d.status }}</span>
+          </div>
+        </div>
+
+        <div class="alt-qr">
+          @if (qrDataUrl()) {
+            <img class="qr-img" [src]="qrDataUrl()" alt="Verification QR code" />
+          } @else {
+            <div class="qr-placeholder"></div>
+          }
+          <span class="qr-caption">Scan to verify</span>
+        </div>
+      </div>
+
+      <div class="alt-foot">
+        <div class="alt-foot-item">
+          <span class="alt-label">Certificate No.</span>
+          <span class="alt-value font-mono font-bold">{{ d.number }}</span>
+        </div>
+        <div class="alt-foot-item">
+          <span class="alt-label">Issue</span>
+          <span class="alt-value">{{ d.issueDate | date:'dd MMM yyyy' }}</span>
+        </div>
+        <div class="alt-foot-item">
+          <span class="alt-label">Expiry</span>
+          <span class="alt-value">{{ d.expiryDate | date:'dd MMM yyyy' }}</span>
+        </div>
+        <div class="alt-foot-item">
+          <span class="alt-label">Printed on</span>
+          <span class="alt-value">{{ today | date:'dd MMM yyyy' }}</span>
+        </div>
+      </div>
+    </div>
+  }
+</div>

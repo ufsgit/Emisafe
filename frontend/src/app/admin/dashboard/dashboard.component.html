@@ -1,7 +1,18 @@
 <div class="dashboard-page">
-  <!-- Page Header -->
-  <div class="page-header">
-    <div class="header-actions">
+  <!-- Executive Command Bar -->
+  <div class="dash-command-bar">
+    <div class="command-left">
+      <span class="live-status-pill">
+        <span class="live-dot"></span>
+        Live Analytics
+      </span>
+      <span class="command-title">Safety &amp; Credential Compliance Overview</span>
+    </div>
+    <div class="command-actions">
+      <a routerLink="/admin/reports" class="btn btn-outline btn-sm">
+        <span class="material-symbols-outlined">analytics</span>
+        Reports
+      </a>
       <a routerLink="/admin/certificates" class="btn btn-primary btn-sm">
         <span class="material-symbols-outlined">add</span>
         Issue Certificate
@@ -11,68 +22,83 @@
 
   <!-- Metric Summary Cards -->
   <div class="metrics-grid">
-    <div class="metric-card accent-navy">
-      <div class="metric-top">
-        <div class="metric-icon-box bg-navy">
-          <span class="material-symbols-outlined">badge</span>
+    <div class="metric-wrap">
+      <a routerLink="/admin/candidates" class="metric-card accent-navy" aria-label="View candidates">
+        <div class="metric-top">
+          <div class="metric-icon-box bg-navy">
+            <span class="material-symbols-outlined">badge</span>
+          </div>
+          <div class="metric-info">
+            <span class="metric-label">Total Candidates</span>
+            <div class="metric-value">{{ kpiEmployees() | number }}</div>
+          </div>
         </div>
-        <div class="metric-info">
-          <span class="metric-label">Total Employees</span>
-          <div class="metric-value">{{ kpiEmployees() }}</div>
+        <div class="metric-foot">
+          <span class="foot-dot"></span>
+          <span><strong>{{ (summary()?.activeEmployees || 0) | number }}</strong> active &middot; <strong>{{ inactiveEmployees() | number }}</strong> inactive</span>
         </div>
-      </div>
-      <div class="metric-foot">
-        <span class="foot-dot"></span>
-        <span><strong>{{ summary()?.activeEmployees || 0 }}</strong> active &middot; <strong>{{ inactiveEmployees() }}</strong> inactive</span>
-      </div>
+      </a>
+      <span class="metric-tip" aria-hidden="true">View Candidates</span>
     </div>
 
-    <div class="metric-card accent-blue">
-      <div class="metric-top">
-        <div class="metric-icon-box bg-navy-light">
-          <span class="material-symbols-outlined">workspace_premium</span>
+    <div class="metric-wrap">
+      <a routerLink="/admin/certificates" class="metric-card accent-blue" aria-label="View certificates">
+        <div class="metric-top">
+          <div class="metric-icon-box bg-navy-light">
+            <span class="material-symbols-outlined">workspace_premium</span>
+          </div>
+          <div class="metric-info">
+            <span class="metric-label">Total Certificates</span>
+            <div class="metric-value">{{ kpiCertificates() | number }}</div>
+          </div>
         </div>
-        <div class="metric-info">
-          <span class="metric-label">Total Certificates</span>
-          <div class="metric-value">{{ kpiCertificates() }}</div>
+        <div class="metric-foot">
+          <span class="foot-dot"></span>
+          <span>
+            <strong>{{ (summary()?.passCount || 0) | number }}</strong> pass &middot;
+            <strong>{{ nonPassCount() | number }}</strong> fail / withheld
+          </span>
         </div>
-      </div>
-      <div class="metric-foot">
-        <span class="foot-dot"></span>
-        <span><strong>{{ summary()?.passCount || 0 }}</strong> pass &middot; <strong>{{ summary()?.failCount || 0 }}</strong> fail</span>
-      </div>
+      </a>
+      <span class="metric-tip" aria-hidden="true">View Certificates</span>
     </div>
 
-    <div class="metric-card accent-green">
-      <div class="metric-top">
-        <div class="metric-icon-box bg-green">
-          <span class="material-symbols-outlined">check_circle</span>
+    <div class="metric-wrap">
+      <a routerLink="/admin/certificates" [queryParams]="{ validity: 'valid' }" class="metric-card accent-green" aria-label="View valid certificates">
+        <div class="metric-top">
+          <div class="metric-icon-box bg-green">
+            <span class="material-symbols-outlined">check_circle</span>
+          </div>
+          <div class="metric-info">
+            <span class="metric-label">Active (Valid)</span>
+            <div class="metric-value">{{ kpiValid() | number }}</div>
+          </div>
         </div>
-        <div class="metric-info">
-          <span class="metric-label">Active (Valid)</span>
-          <div class="metric-value">{{ kpiValid() }}</div>
+        <div class="metric-foot">
+          <span class="foot-dot"></span>
+          <span><strong>{{ (summary()?.expiringSoonCount || 0) | number }}</strong> expiring within 30 days</span>
         </div>
-      </div>
-      <div class="metric-foot">
-        <span class="foot-dot"></span>
-        <span><strong>{{ summary()?.expiringSoonCount || 0 }}</strong> expiring within 30 days</span>
-      </div>
+      </a>
+      <span class="metric-tip" aria-hidden="true">View Valid Certificates</span>
     </div>
 
-    <div class="metric-card accent-red">
-      <div class="metric-top">
-        <div class="metric-icon-box bg-red">
-          <span class="material-symbols-outlined">event_busy</span>
+    <div class="metric-wrap">
+      <a routerLink="/admin/certificates" [queryParams]="{ validity: 'expired' }" class="metric-card accent-red" aria-label="View expired certificates">
+        <div class="metric-top">
+          <div class="metric-icon-box bg-red">
+            <span class="material-symbols-outlined">event_busy</span>
+          </div>
+          <div class="metric-info">
+            <span class="metric-label">Expired</span>
+            <div class="metric-value">{{ kpiExpired() | number }}</div>
+          </div>
         </div>
-        <div class="metric-info">
-          <span class="metric-label">Expired</span>
-          <div class="metric-value">{{ kpiExpired() }}</div>
+        <div class="metric-foot">
+          <span class="foot-dot"></span>
+          <span><strong>{{ expiredPct() }}%</strong> of passed certificates</span>
         </div>
-      </div>
-      <div class="metric-foot">
-        <span class="foot-dot"></span>
-        <span><strong>{{ expiredPct() }}%</strong> of certificates</span>
-      </div>
+      </a>
+      <span class="metric-tip" aria-hidden="true">View Expired Certificates</span>
     </div>
   </div>
 
@@ -91,7 +117,7 @@
         <canvas #issuedChart></canvas>
       </div>
       <div class="chart-footnote">
-        {{ issuedTotal() }} issued in the last 3 years
+        {{ issuedTotal() | number }} issued in the last 3 years
       </div>
     </div>
 
@@ -102,7 +128,7 @@
           <span class="material-symbols-outlined">donut_large</span>
           <h2 class="card-title">Pass / Fail Ratio</h2>
         </div>
-        <span class="badge badge-info">{{ summary()?.totalCertificates || 0 }} Total</span>
+        <span class="badge badge-info">{{ (summary()?.totalCertificates || 0) | number }} Total</span>
       </div>
       <div class="chart-container">
         <canvas #passFailChart></canvas>
@@ -111,14 +137,14 @@
         <div class="legend-item">
           <span class="legend-dot bg-green"></span>
           <span class="legend-label">Pass</span>
-          <strong class="legend-value">{{ summary()?.passCount || 0 }}</strong>
+          <strong class="legend-value">{{ formatCompact(summary()?.passCount) }}</strong>
           <span class="legend-pct text-green">{{ pct(summary()?.passCount, summary()?.totalCertificates) }}</span>
         </div>
         <div class="legend-item">
           <span class="legend-dot bg-red"></span>
-          <span class="legend-label">Fail</span>
-          <strong class="legend-value">{{ summary()?.failCount || 0 }}</strong>
-          <span class="legend-pct text-red">{{ pct(summary()?.failCount, summary()?.totalCertificates) }}</span>
+          <span class="legend-label">{{ (summary()?.otherStatusCount || 0) > 0 ? 'Fail/Held' : 'Fail' }}</span>
+          <strong class="legend-value">{{ formatCompact(nonPassCount()) }}</strong>
+          <span class="legend-pct text-red">{{ pct(nonPassCount(), summary()?.totalCertificates) }}</span>
         </div>
       </div>
     </div>
@@ -130,7 +156,7 @@
           <span class="material-symbols-outlined">donut_small</span>
           <h2 class="card-title">Validity Status</h2>
         </div>
-        <span class="badge badge-info">{{ pct(summary()?.validCount, summary()?.totalCertificates) }} Valid</span>
+        <span class="badge badge-info">{{ pct(summary()?.validCount, passedCertificatesTotal()) }} Valid</span>
       </div>
       <div class="chart-container">
         <canvas #validityChart></canvas>
@@ -139,32 +165,125 @@
         <div class="legend-item">
           <span class="legend-dot bg-navy"></span>
           <span class="legend-label">Valid</span>
-          <strong class="legend-value">{{ summary()?.validCount || 0 }}</strong>
-          <span class="legend-pct text-navy">{{ pct(summary()?.validCount, summary()?.totalCertificates) }}</span>
+          <strong class="legend-value">{{ formatCompact(summary()?.validCount) }}</strong>
+          <span class="legend-pct text-navy">{{ pct(summary()?.validCount, passedCertificatesTotal()) }}</span>
         </div>
         <div class="legend-item">
           <span class="legend-dot bg-red"></span>
           <span class="legend-label">Expired</span>
-          <strong class="legend-value">{{ summary()?.expiredCount || 0 }}</strong>
-          <span class="legend-pct text-red">{{ pct(summary()?.expiredCount, summary()?.totalCertificates) }}</span>
+          <strong class="legend-value">{{ formatCompact(summary()?.expiredCount) }}</strong>
+          <span class="legend-pct text-red">{{ pct(summary()?.expiredCount, passedCertificatesTotal()) }}</span>
         </div>
       </div>
     </div>
 
-    <!-- Chart Card: Certificates by Type (horizontal bar) -->
-    <div class="dash-card">
+    <!-- Card: Certificates by Scope (creative ranked progress distribution) -->
+    <div class="dash-card scope-dist-card">
       <div class="dash-card-header">
         <div class="card-title-group">
           <span class="material-symbols-outlined">category</span>
-          <h2 class="card-title">By Type</h2>
+          <h2 class="card-title">By Scope</h2>
         </div>
-        <span class="badge badge-info">{{ byType().length }} Types</span>
+        <span class="badge badge-info">{{ byType().length }} Scopes</span>
       </div>
-      <div class="chart-container">
-        <canvas #typeChart></canvas>
-      </div>
+
+      @if (byType().length === 0) {
+        <div class="empty-state">
+          <p>No scope data available</p>
+        </div>
+      } @else {
+        <div class="scope-dist-list">
+          @for (item of byType(); track item.name; let i = $index) {
+            <div class="scope-dist-row" [title]="item.name + ': ' + (item.total | number) + ' certificates'">
+              <div class="scope-dist-top">
+                <span class="scope-rank">{{ i + 1 }}</span>
+                <span class="scope-name">{{ item.name }}</span>
+                <span class="scope-stat">
+                  <strong>{{ formatCompact(item.total) }}</strong>
+                  <small>{{ pct(item.total, summary()?.totalCertificates) }}</small>
+                </span>
+              </div>
+              <div class="scope-bar-track">
+                <div
+                  class="scope-bar-fill"
+                  [ngClass]="'bar-tone-' + (i % 4)"
+                  [style.width.%]="scopeWidthPct(item.total)"
+                ></div>
+              </div>
+            </div>
+          }
+        </div>
+      }
     </div>
   </div>
+
+  <!-- Pending Approval Table (Certification Manager ONLY) -->
+  @if (auth.isManager()) {
+    <div class="dash-card mt-6">
+      <div class="dash-card-header">
+        <div class="card-title-group">
+          <span class="material-symbols-outlined text-yellow">pending_actions</span>
+          <h2 class="card-title">Pending Approval</h2>
+          @if (pendingApprovalCount() > 0) {
+            <span class="badge badge-expiring">{{ pendingApprovalCount() }}</span>
+          }
+        </div>
+        <a routerLink="/admin/certificates" [queryParams]="{ approval: 'pending' }" class="btn btn-outline btn-sm">
+          View All
+        </a>
+      </div>
+
+      @if (pendingApproval().length === 0) {
+        <div class="empty-state">
+          <span class="material-symbols-outlined empty-icon">how_to_reg</span>
+          <h4>No certificates pending approval</h4>
+        </div>
+      } @else {
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Certificate #</th>
+                <th>Candidate Name</th>
+                <th>Emirates ID</th>
+                <th>Scope</th>
+                <th>Company</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (cert of pendingApproval(); track cert.id) {
+                <tr>
+                  <td>
+                    <span class="font-mono font-bold">{{ cert.certificate_number }}</span>
+                  </td>
+                  <td>
+                    <strong>{{ cert.employee_name }}</strong>
+                  </td>
+                  <td>
+                    <span class="font-mono text-muted">{{ cert.employee_emirates_id }}</span>
+                  </td>
+                  <td>{{ cert.scope_name || cert.certificate_type_name }}</td>
+                  <td>{{ cert.company_name || 'N/A' }}</td>
+                  <td>
+                    <div class="action-buttons">
+                      <button type="button" class="btn btn-primary btn-sm" (click)="approveCert(cert)">
+                        <span class="material-symbols-outlined">how_to_reg</span>
+                        Approve
+                      </button>
+                      <a [routerLink]="['/admin/certificates']" [queryParams]="{ approval: 'pending', search: cert.certificate_number }" class="btn btn-outline btn-sm">
+                        View
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
 
   <!-- Certificates Expiring Soon Table -->
   <div class="dash-card mt-6">
@@ -189,9 +308,9 @@
           <thead>
             <tr>
               <th>Certificate #</th>
-              <th>Employee Name</th>
+              <th>Candidate Name</th>
               <th>Emirates ID</th>
-              <th>Certificate Type</th>
+              <th>Certification Scope</th>
               <th>Expiry Date</th>
               <th>Days Left</th>
               <th>Action</th>
@@ -209,7 +328,7 @@
                 <td>
                   <span class="font-mono text-muted">{{ cert.employee_emirates_id }}</span>
                 </td>
-                <td>{{ cert.certificate_type_name }}</td>
+                <td>{{ cert.scope_name || cert.certificate_type_name }}</td>
                 <td>
                   <span class="text-red font-bold">{{ cert.expiry_date | date:'dd MMM yyyy' }}</span>
                 </td>

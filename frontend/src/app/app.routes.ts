@@ -16,6 +16,23 @@ export const routes: Routes = [
     canActivate: [guestGuard]
   },
 
+  // 2b. Print-friendly certificate documents (auth-protected, NO navbar)
+  {
+    path: 'admin/certificates/:id/print',
+    loadComponent: () => import('./admin/certificates/certificate-print.component').then(m => m.CertificatePrintComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/certificates/:id/alternate',
+    loadComponent: () => import('./admin/certificates/certificate-alternate.component').then(m => m.CertificateAlternateComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/certificates/:id/card',
+    redirectTo: 'admin/certificates/:id/alternate',
+    pathMatch: 'full'
+  },
+
   // 3. Admin Protected Shell
   {
     path: 'admin',
@@ -32,24 +49,36 @@ export const routes: Routes = [
         loadComponent: () => import('./admin/dashboard/dashboard.component').then(m => m.DashboardComponent)
       },
       {
-        path: 'employees',
-        loadComponent: () => import('./admin/employees/employees.component').then(m => m.EmployeesComponent)
+        path: 'candidates',
+        loadComponent: () => import('./admin/candidates/candidates.component').then(m => m.CandidatesComponent)
       },
       {
-        path: 'employees/:id',
-        loadComponent: () => import('./admin/employees/employee-detail.component').then(m => m.EmployeeDetailComponent)
+        path: 'candidates/:id',
+        loadComponent: () => import('./admin/candidates/candidate-detail.component').then(m => m.CandidateDetailComponent)
       },
       {
-        path: 'certificate-types',
-        loadComponent: () => import('./admin/certificate-types/certificate-types.component').then(m => m.CertificateTypesComponent)
+        path: 'scopes',
+        loadComponent: () => import('./admin/scopes/scopes.component').then(m => m.ScopesComponent)
       },
       {
         path: 'certificates',
         loadComponent: () => import('./admin/certificates/certificates.component').then(m => m.CertificatesComponent)
       },
       {
+        path: 'certificate-format',
+        loadComponent: () => import('./admin/certificate-format/certificate-format.component').then(m => m.CertificateFormatComponent)
+      },
+      {
         path: 'reports',
         loadComponent: () => import('./admin/reports/reports.component').then(m => m.ReportsComponent)
+      },
+      {
+        path: 'users',
+        loadComponent: () => import('./admin/users/users.component').then(m => m.UsersComponent)
+      },
+      {
+        path: 'login-history',
+        loadComponent: () => import('./admin/login-history/login-history.component').then(m => m.LoginHistoryComponent)
       }
     ]
   },
