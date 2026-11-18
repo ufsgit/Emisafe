@@ -119,22 +119,50 @@ td,
   cursor: default;
 }
 
-/* User selection disabled on headings, buttons and badges for native app feel */
+/* User selection disabled across UI chrome; text selection stays enabled on inputs, codes & table data */
+body,
 h1,
 h2,
 h3,
 h4,
 h5,
 h6,
+p,
+span,
+a,
 label,
 th,
 .btn,
 .tab-btn,
 .action-btn,
 .badge,
+.alert,
 .metric-label,
 .material-symbols-outlined {
   user-select: none;
+  -webkit-user-select: none;
+}
+
+input,
+textarea,
+.font-mono,
+td {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+::selection {
+  background: rgba(99, 102, 241, 0.28);
+  color: inherit;
+}
+
+/* Match browser autofill background to theme instead of default bluish-grey */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-main);
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 /* Only genuine input controls display the typing symbol */
@@ -1385,6 +1413,19 @@ html[data-theme="dark"] body .form-control {
     color: #CBD5E1;
     border-color: rgba(148, 163, 184, 0.2);
   }
+}
+
+html[data-theme="dark"] body input:-webkit-autofill,
+html[data-theme="dark"] body input:-webkit-autofill:hover {
+  -webkit-text-fill-color: #F8FAFC;
+  -webkit-box-shadow: 0 0 0px 1000px #111827 inset;
+  caret-color: #F8FAFC;
+}
+
+html[data-theme="dark"] body input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #F8FAFC;
+  -webkit-box-shadow: 0 0 0px 1000px #1E293B inset;
+  caret-color: #F8FAFC;
 }
 
 html[data-theme="dark"] body .alert.alert-danger {
