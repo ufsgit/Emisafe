@@ -1,17 +1,17 @@
 -- =============================================================================
 -- EmiSafe Stored Procedure: sp_seed_100k_data(IN p_flag INT)
 -- Executes ONLY when input parameter p_flag = 1.
--- Removes old candidate/certificate data and populates 100,000 new test records
--- aligned with the updated Candidate, Certification Scope, Accreditation (EIAC /
--- Non-EIAC), Company, and Certificate Status (Pass, Fail, Withdrawn, Withheld)
--- specifications.
+-- Seeds the 7 official EIAC Certification Scopes, 100,000 Candidates, and
+-- 100,000 Certificates.
 -- =============================================================================
 
-DROP PROCEDURE IF EXISTS sp_seed_100k_data;
+USE `emisafe_db`;
+
+DROP PROCEDURE IF EXISTS `sp_seed_100k_data`;
 
 DELIMITER $$
 
-CREATE PROCEDURE sp_seed_100k_data(IN p_flag INT)
+CREATE PROCEDURE `sp_seed_100k_data`(IN p_flag INT)
 BEGIN
   IF p_flag IS NULL OR p_flag <> 1 THEN
     SELECT
@@ -28,19 +28,17 @@ BEGIN
 
     SET FOREIGN_KEY_CHECKS = 1;
 
-    -- 1. Seed 7 Predefined EIAC Scopes + 1 Non-EIAC Scope
+    -- 1. Seed 7 Official EIAC Scopes
     INSERT INTO certificate_types (id, name, accreditation_status, is_active, created_at) VALUES
-      (1, 'Occupational Health and Safety (OSHA 30)', 'EIAC', 1, NOW()),
-      (2, 'Basic First Aid & CPR / AED', 'EIAC', 1, NOW()),
-      (3, 'Fire Warden & Emergency Response', 'EIAC', 1, NOW()),
-      (4, 'Working at Heights Safety', 'EIAC', 1, NOW()),
-      (5, 'Confined Space Entry & Rescue', 'EIAC', 1, NOW()),
-      (6, 'Rigging & Lifting Operations Safety', 'EIAC', 1, NOW()),
-      (7, 'Forklift & Heavy Equipment Operator Safety', 'EIAC', 1, NOW()),
-      (8, 'H2S & Hazardous Gas Awareness', 'Non-EIAC', 1, NOW());
+      (1, 'Signal Man', 'EIAC', 1, NOW()),
+      (2, 'Rigger Level 1', 'EIAC', 1, NOW()),
+      (3, 'Rigger Level 2', 'EIAC', 1, NOW()),
+      (4, 'Forklift Operator', 'EIAC', 1, NOW()),
+      (5, 'EOT Crane Operator', 'EIAC', 1, NOW()),
+      (6, 'Mobile Crane Operator', 'EIAC', 1, NOW()),
+      (7, 'Tower Crane Operator', 'EIAC', 1, NOW());
 
-    -- 2. Seed 100,000 Candidates (employees) with realistic 3-part names, mandatory photo,
-    --    Emirates ID, company name, and optional fields
+    -- 2. Seed 100,000 Candidates (employees)
     INSERT INTO employees (
       id, name, photo, email, phone, emirates_id,
       date_of_birth, nationality, gender, address,
@@ -97,8 +95,7 @@ BEGIN
       CROSS JOIN (SELECT 0 n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) d4
     ) gen;
 
-    -- 3. Seed 100,000 Certificates (certificates) with realistic scope distribution,
-    --    natural quarterly growth curve, WOR-yy/xxxx/dd/mm-xx-Cx format, and multi-company history.
+    -- 3. Seed 100,000 Certificates (certificates)
     INSERT INTO certificates (
       id, employee_id, certificate_type_id, scope_name,
       accreditation_status, company_name, certificate_number,
@@ -118,23 +115,18 @@ BEGIN
         WHEN MOD(seq, 20) IN (10, 11, 12) THEN 4
         WHEN MOD(seq, 20) IN (13, 14) THEN 5
         WHEN MOD(seq, 20) IN (15, 16) THEN 6
-        WHEN MOD(seq, 20) IN (17, 18) THEN 7
-        ELSE 8
+        ELSE 7
       END AS certificate_type_id,
       CASE
-        WHEN MOD(seq, 20) IN (0, 1, 2, 3) THEN 'Occupational Health and Safety (OSHA 30)'
-        WHEN MOD(seq, 20) IN (4, 5, 6) THEN 'Basic First Aid & CPR / AED'
-        WHEN MOD(seq, 20) IN (7, 8, 9) THEN 'Fire Warden & Emergency Response'
-        WHEN MOD(seq, 20) IN (10, 11, 12) THEN 'Working at Heights Safety'
-        WHEN MOD(seq, 20) IN (13, 14) THEN 'Confined Space Entry & Rescue'
-        WHEN MOD(seq, 20) IN (15, 16) THEN 'Rigging & Lifting Operations Safety'
-        WHEN MOD(seq, 20) IN (17, 18) THEN 'Forklift & Heavy Equipment Operator Safety'
-        ELSE 'H2S & Hazardous Gas Awareness'
+        WHEN MOD(seq, 20) IN (0, 1, 2, 3) THEN 'Signal Man'
+        WHEN MOD(seq, 20) IN (4, 5, 6) THEN 'Rigger Level 1'
+        WHEN MOD(seq, 20) IN (7, 8, 9) THEN 'Rigger Level 2'
+        WHEN MOD(seq, 20) IN (10, 11, 12) THEN 'Forklift Operator'
+        WHEN MOD(seq, 20) IN (13, 14) THEN 'EOT Crane Operator'
+        WHEN MOD(seq, 20) IN (15, 16) THEN 'Mobile Crane Operator'
+        ELSE 'Tower Crane Operator'
       END AS scope_name,
-      CASE
-        WHEN MOD(seq, 20) = 19 THEN 'Non-EIAC'
-        ELSE 'EIAC'
-      END AS accreditation_status,
+      'EIAC' AS accreditation_status,
       CASE
         WHEN seq <= 1000 THEN ELT(MOD(seq + 3, 10) + 1,
           'ADNOC Drilling',
