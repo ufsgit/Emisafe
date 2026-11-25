@@ -4,7 +4,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { Observable, tap, catchError, of, map } from 'rxjs';
 
-export type UserRole = 'admin' | 'certification_manager' | 'examiner';
+export type UserRole = 'admin' | 'certification_manager' | 'examiner' | 'technical_coordinator';
 
 export interface AdminUser {
   id: number;
@@ -33,6 +33,16 @@ export class AuthService {
   public isAdmin = computed<boolean>(() => this.role() === 'admin');
   /** True when the signed-in user is a certification manager. */
   public isManager = computed<boolean>(() => this.role() === 'certification_manager');
+  /** True when the signed-in user is a technical coordinator (supervisor). */
+  public isCoordinator = computed<boolean>(() => this.role() === 'technical_coordinator');
+  /** True when the signed-in user may issue, edit, or delete certificates. */
+  public canManageCertificates = computed<boolean>(() =>
+    ['admin', 'certification_manager', 'examiner'].includes(this.role())
+  );
+  /** True when the signed-in user may edit, deactivate, or delete existing candidates/scopes/documents. */
+  public canModifyRecords = computed<boolean>(() =>
+    ['admin', 'certification_manager', 'examiner'].includes(this.role())
+  );
 
   /** Human readable role label for the UI. */
   public roleLabel = computed<string>(() => {
@@ -40,6 +50,7 @@ export class AuthService {
       case 'admin': return 'Administrator';
       case 'certification_manager': return 'Certification Manager';
       case 'examiner': return 'Examiner';
+      case 'technical_coordinator': return 'Technical Coordinator';
       default: return 'Administrator';
     }
   });

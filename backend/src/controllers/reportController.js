@@ -13,6 +13,18 @@ async function getEmployeeWiseReport(req, res, next) {
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 10));
     const offset = (page - 1) * limit;
+    const search = req.query.search ? String(req.query.search).trim() : '';
+
+    const whereParams = [];
+    let csvWhereSql = '';
+    let subWhereSql = '';
+
+    if (search) {
+      const term = `%${search}%`;
+      csvWhereSql = 'WHERE (e.name LIKE ? OR e.email LIKE ? OR e.emirates_id LIKE ? OR e.job_title LIKE ?)';
+      subWhereSql = 'WHERE (name LIKE ? OR email LIKE ? OR emirates_id LIKE ? OR job_title LIKE ?)';
+      whereParams.push(term, term, term, term);
+    }
 
     const baseSql = `
       SELECT 
@@ -28,13 +40,14 @@ async function getEmployeeWiseReport(req, res, next) {
         SUM(CASE WHEN c.status IN ('Fail', 'Withdrawn', 'Withheld') THEN 1 ELSE 0 END) AS failed_certificates
       FROM employees e
       LEFT JOIN certificates c ON e.id = c.employee_id
+      ${csvWhereSql}
       GROUP BY e.id
       ORDER BY e.id DESC
     `;
 
-    // CSV export always returns ALL rows (not paginated)
+    // CSV export always returns ALL matching rows (not paginated)
     if (format === 'csv') {
-      const [rows] = await db.query(baseSql);
+      const [rows] = await db.query(baseSql, whereParams);
 
       const headers = [
         'Candidate ID',
@@ -73,7 +86,10 @@ async function getEmployeeWiseReport(req, res, next) {
     }
 
     // JSON: total count + one page of rows (paginate employees subquery first for instant performance on 100k+ rows)
-    const [countRows] = await db.query('SELECT COUNT(*) AS total FROM employees');
+    const [countRows] = await db.query(
+      `SELECT COUNT(*) AS total FROM employees ${subWhereSql}`,
+      whereParams
+    );
     const total = countRows[0].total;
 
     const pagedSql = `
@@ -91,6 +107,7 @@ async function getEmployeeWiseReport(req, res, next) {
       FROM (
         SELECT id, name, email, emirates_id, job_title, is_active
         FROM employees
+        ${subWhereSql}
         ORDER BY id DESC
         LIMIT ? OFFSET ?
       ) e
@@ -99,7 +116,7 @@ async function getEmployeeWiseReport(req, res, next) {
       ORDER BY e.id DESC
     `;
 
-    const [rows] = await db.query(pagedSql, [limit, offset]);
+    const [rows] = await db.query(pagedSql, [...whereParams, limit, offset]);
 
     return res.json({
       success: true,

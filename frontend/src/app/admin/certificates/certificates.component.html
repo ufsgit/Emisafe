@@ -61,10 +61,12 @@
       </div>
     </div>
 
+    @if (auth.canManageCertificates()) {
     <button class="btn btn-primary" (click)="openCreateModal()">
       <span class="material-symbols-outlined">add_task</span>
       Issue Certificate
     </button>
+    }
   </div>
 
   <!-- Certificate Format Bar (Demo Format vs Uploaded Raw Client Format) -->
@@ -202,6 +204,7 @@
                 <span class="material-symbols-outlined">how_to_reg</span>
               </button>
               }
+              @if (auth.canManageCertificates()) {
               <button type="button" class="action-btn" (click)="openEditModal(cert)" title="Edit">
                 <span class="material-symbols-outlined">edit</span>
               </button>
@@ -209,6 +212,7 @@
                 title="Delete certificate">
                 <span class="material-symbols-outlined">delete</span>
               </button>
+              }
             </div>
           </td>
         </tr>

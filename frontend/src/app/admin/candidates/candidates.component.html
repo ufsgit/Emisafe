@@ -97,29 +97,31 @@
                   <a [routerLink]="['/admin/candidates', emp.id]" class="action-btn" title="View details" (click)="$event.stopPropagation()">
                     <span class="material-symbols-outlined">visibility</span>
                   </a>
-                  <button type="button" class="action-btn" (click)="openEditModal(emp); $event.stopPropagation()" title="Edit">
-                    <span class="material-symbols-outlined">edit</span>
-                  </button>
-                  <button 
-                    type="button" 
-                    class="action-btn" 
-                    [class.text-red]="emp.is_active" 
-                    [class.text-green]="!emp.is_active"
-                    (click)="confirmToggleStatus(emp, $event)" 
-                    [title]="emp.is_active ? 'Deactivate' : 'Activate'"
-                  >
-                    <span class="material-symbols-outlined">
-                      {{ emp.is_active ? 'block' : 'check_circle' }}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    class="action-btn action-btn-delete"
-                    (click)="confirmDelete(emp, $event)"
-                    title="Delete candidate"
-                  >
-                    <span class="material-symbols-outlined">delete</span>
-                  </button>
+                  @if (auth.canModifyRecords()) {
+                    <button type="button" class="action-btn" (click)="openEditModal(emp); $event.stopPropagation()" title="Edit">
+                      <span class="material-symbols-outlined">edit</span>
+                    </button>
+                    <button 
+                      type="button" 
+                      class="action-btn" 
+                      [class.text-red]="emp.is_active" 
+                      [class.text-green]="!emp.is_active"
+                      (click)="confirmToggleStatus(emp, $event)" 
+                      [title]="emp.is_active ? 'Deactivate' : 'Activate'"
+                    >
+                      <span class="material-symbols-outlined">
+                        {{ emp.is_active ? 'block' : 'check_circle' }}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      class="action-btn action-btn-delete"
+                      (click)="confirmDelete(emp, $event)"
+                      title="Delete candidate"
+                    >
+                      <span class="material-symbols-outlined">delete</span>
+                    </button>
+                  }
                 </div>
               </td>
             </tr>

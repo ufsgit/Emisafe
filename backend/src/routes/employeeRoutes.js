@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, param } = require('express-validator');
 const employeeController = require('../controllers/employeeController');
-const { authenticateAdmin } = require('../middleware/auth');
+const { authenticateAdmin, requireRole } = require('../middleware/auth');
 const { handleValidationErrors } = require('../middleware/validate');
 
 const router = express.Router();
@@ -44,19 +44,23 @@ const updateEmployeeRules = [...commonRules, handleValidationErrors];
 
 const idRule = [param('id').isInt().withMessage('Valid candidate ID required.'), handleValidationErrors];
 
+const RECORD_MODIFY_ROLES = ['admin', 'certification_manager', 'examiner'];
+
 router.get('/', employeeController.listEmployees);
 // NOTE: lookup must be registered BEFORE '/:id'
 router.get('/lookup', employeeController.lookupEmployee);
 router.get('/:id', idRule, employeeController.getEmployeeById);
+// Technical Coordinator (and all staff roles) may add new candidates
 router.post('/', createEmployeeRules, employeeController.createEmployee);
-router.put('/:id', [...idRule, ...updateEmployeeRules], employeeController.updateEmployee);
-router.patch('/:id/toggle-status', idRule, employeeController.toggleEmployeeStatus);
-router.delete('/:id', idRule, employeeController.deleteEmployee);
+// Modifying, deactivating, or deleting existing candidates requires non-coordinator privileges
+router.put('/:id', requireRole(...RECORD_MODIFY_ROLES), [...idRule, ...updateEmployeeRules], employeeController.updateEmployee);
+router.patch('/:id/toggle-status', requireRole(...RECORD_MODIFY_ROLES), idRule, employeeController.toggleEmployeeStatus);
+router.delete('/:id', requireRole(...RECORD_MODIFY_ROLES), idRule, employeeController.deleteEmployee);
 
-// Candidate documents (multi-file base64 upload)
+// Candidate documents (multi-file base64 upload allowed when onboarding; deletion restricted)
 router.get('/:id/documents', idRule, employeeController.listDocuments);
 router.post('/:id/documents', idRule, employeeController.uploadDocuments);
-router.delete('/:id/documents/:docId', [
+router.delete('/:id/documents/:docId', requireRole(...RECORD_MODIFY_ROLES), [
   param('id').isInt().withMessage('Valid candidate ID required.'),
   param('docId').isInt().withMessage('Valid document ID required.'),
   handleValidationErrors

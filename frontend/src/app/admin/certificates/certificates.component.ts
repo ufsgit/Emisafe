@@ -338,6 +338,7 @@ export class CertificatesComponent implements OnInit {
   }
 
   openCreateModal(): void {
+    if (!this.auth.canManageCertificates()) return;
     this.ensureEmployeesLoaded();
     this.isEditing.set(false);
     this.modalError.set('');
@@ -390,6 +391,7 @@ export class CertificatesComponent implements OnInit {
   }
 
   openEditModal(cert: CertificateItem): void {
+    if (!this.auth.canManageCertificates()) return;
     this.isEditing.set(true);
     this.modalError.set('');
     this.issuedResult.set(null);
@@ -490,6 +492,7 @@ export class CertificatesComponent implements OnInit {
   }
 
   saveCertificate(): void {
+    if (!this.auth.canManageCertificates()) return;
     if (!this.isEditing() && !this.formData.employee_id) {
       this.modalError.set('Search for a candidate by Emirates ID first.');
       return;
@@ -613,6 +616,7 @@ export class CertificatesComponent implements OnInit {
   }
 
   confirmDelete(cert: CertificateItem): void {
+    if (!this.auth.canManageCertificates()) return;
     this.selectedCert.set(cert);
     this.showDeleteModal.set(true);
   }

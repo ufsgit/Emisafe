@@ -1,0 +1,4 @@
+tech coord- not able to gen cert
+addition of candidates cn be done
+add cert scope
+QP-CB-10-F03/*Rev.6/01.07.2025*- only cert manager will have access to revise the certification format (new template). **only this changes

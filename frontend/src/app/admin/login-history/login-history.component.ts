@@ -32,7 +32,8 @@ export class LoginHistoryComponent implements OnInit {
   private roles = [
     { value: 'admin', label: 'Administrator' },
     { value: 'certification_manager', label: 'Certification Manager' },
-    { value: 'examiner', label: 'Examiner' }
+    { value: 'examiner', label: 'Examiner' },
+    { value: 'technical_coordinator', label: 'Technical Coordinator' }
   ];
 
   ngOnInit(): void {

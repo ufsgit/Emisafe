@@ -37,6 +37,7 @@ export class AdminLayoutComponent {
   public compactUserName = computed(() => {
     const raw = (this.currentUser()?.name || 'Admin').trim();
     if (raw.toLowerCase() === 'system administrator') return 'Sys. Admin';
+    if (raw.toLowerCase() === 'technical coordinator') return 'Tech. Coord.';
     if (raw.length > 14) return raw.split(/\s+/)[0];
     return raw;
   });

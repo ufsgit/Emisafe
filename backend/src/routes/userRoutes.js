@@ -16,8 +16,8 @@ const createUserRules = [
   body('email').isEmail().withMessage('A valid email address is required.').normalizeEmail(),
   body('password').notEmpty().withMessage('Password is required.'),
   body('role')
-    .isIn(['admin', 'certification_manager', 'examiner'])
-    .withMessage('Role must be admin, certification_manager or examiner.'),
+    .isIn(['admin', 'certification_manager', 'examiner', 'technical_coordinator'])
+    .withMessage('Role must be admin, certification_manager, examiner or technical_coordinator.'),
   handleValidationErrors
 ];
 
@@ -28,8 +28,8 @@ const updateUserRules = [
   body('password').optional().notEmpty().withMessage('Password cannot be empty.'),
   body('role')
     .optional()
-    .isIn(['admin', 'certification_manager', 'examiner'])
-    .withMessage('Role must be admin, certification_manager or examiner.'),
+    .isIn(['admin', 'certification_manager', 'examiner', 'technical_coordinator'])
+    .withMessage('Role must be admin, certification_manager, examiner or technical_coordinator.'),
   handleValidationErrors
 ];
 

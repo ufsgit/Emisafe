@@ -3,6 +3,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { EmployeeService, Employee, EmployeeDocument } from '../../core/services/employee.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 
 interface CertificateGroup {
@@ -22,6 +23,7 @@ export class CandidateDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private employeeService = inject(EmployeeService);
   private toast = inject(ToastService);
+  public auth = inject(AuthService);
 
   public candidate = signal<Employee | null>(null);
   public certificates = signal<any[]>([]);
@@ -150,6 +152,7 @@ export class CandidateDetailComponent implements OnInit {
   }
 
   confirmDeleteDoc(doc: EmployeeDocument): void {
+    if (!this.auth.canModifyRecords()) return;
     this.selectedDoc.set(doc);
     this.showDocDeleteModal.set(true);
   }

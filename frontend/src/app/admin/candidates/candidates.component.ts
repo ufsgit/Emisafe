@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { EmployeeService, Employee } from '../../core/services/employee.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 
 @Component({
@@ -16,6 +17,7 @@ export class CandidatesComponent implements OnInit {
   private employeeService = inject(EmployeeService);
   private toast = inject(ToastService);
   private router = inject(Router);
+  public auth = inject(AuthService);
 
   public candidates = signal<Employee[]>([]);
   public totalCount = signal<number>(0);
@@ -122,6 +124,7 @@ export class CandidatesComponent implements OnInit {
   }
 
   openEditModal(emp: Employee): void {
+    if (!this.auth.canModifyRecords()) return;
     this.isEditing.set(true);
     this.modalError.set('');
     this.formData = {
@@ -254,6 +257,7 @@ export class CandidatesComponent implements OnInit {
 
   confirmToggleStatus(emp: Employee, event?: Event): void {
     event?.stopPropagation();
+    if (!this.auth.canModifyRecords()) return;
     this.selectedCandidate.set(emp);
     this.showConfirmModal.set(true);
   }
@@ -282,6 +286,7 @@ export class CandidatesComponent implements OnInit {
 
   confirmDelete(emp: Employee, event?: Event): void {
     event?.stopPropagation();
+    if (!this.auth.canModifyRecords()) return;
     this.selectedCandidate.set(emp);
     this.showDeleteModal.set(true);
   }

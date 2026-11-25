@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 const config = require('../config/env');
 
-const ROLES = ['admin', 'certification_manager', 'examiner'];
+const ROLES = ['admin', 'certification_manager', 'examiner', 'technical_coordinator'];
 
 function clientIp(req) {
   const fwd = req.headers['x-forwarded-for'];

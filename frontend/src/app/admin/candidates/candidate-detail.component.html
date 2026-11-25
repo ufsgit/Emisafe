@@ -45,12 +45,14 @@
             <p class="prev-company">Previous company: <strong>{{ emp.previous_company }}</strong></p>
           }
         </div>
-        <div class="profile-actions">
-          <a [routerLink]="['/admin/certificates']" [queryParams]="{ employee_id: emp.id }" class="btn btn-primary btn-sm">
-            <span class="material-symbols-outlined">add</span>
-            Issue Certificate
-          </a>
-        </div>
+        @if (auth.canManageCertificates()) {
+          <div class="profile-actions">
+            <a [routerLink]="['/admin/certificates']" [queryParams]="{ employee_id: emp.id }" class="btn btn-primary btn-sm">
+              <span class="material-symbols-outlined">add</span>
+              Issue Certificate
+            </a>
+          </div>
+        }
       </div>
 
       <!-- Profile Details Grid -->
@@ -182,9 +184,11 @@
               <a class="action-btn" [href]="docUrl(doc.file_path)" target="_blank" rel="noopener" title="View document">
                 <span class="material-symbols-outlined">visibility</span>
               </a>
-              <button type="button" class="action-btn action-btn-delete" (click)="confirmDeleteDoc(doc)" title="Delete document">
-                <span class="material-symbols-outlined">delete</span>
-              </button>
+              @if (auth.canModifyRecords()) {
+                <button type="button" class="action-btn action-btn-delete" (click)="confirmDeleteDoc(doc)" title="Delete document">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              }
             </div>
           </div>
         }

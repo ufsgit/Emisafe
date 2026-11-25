@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const db = require('../config/db');
 const { saveBase64Upload, deleteUploadedFile } = require('../services/uploadService');
 
-const ROLES = ['admin', 'certification_manager', 'examiner'];
+const ROLES = ['admin', 'certification_manager', 'examiner', 'technical_coordinator'];
 
 const USER_COLUMNS = 'id, name, email, role, is_active, photo, created_at';
 
@@ -58,7 +58,7 @@ async function createUser(req, res, next) {
     if (!ROLES.includes(role)) {
       return res.status(400).json({
         success: false,
-        message: 'Role must be admin, certification_manager or examiner.'
+        message: 'Role must be admin, certification_manager, examiner or technical_coordinator.'
       });
     }
 
@@ -140,7 +140,7 @@ async function updateUser(req, res, next) {
     if (role !== undefined && !ROLES.includes(role)) {
       return res.status(400).json({
         success: false,
-        message: 'Role must be admin, certification_manager or examiner.'
+        message: 'Role must be admin, certification_manager, examiner or technical_coordinator.'
       });
     }
 

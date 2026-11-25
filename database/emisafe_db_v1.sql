@@ -22,14 +22,14 @@ DROP TABLE IF EXISTS `certificate_formats`;
 DROP TABLE IF EXISTS `admins`;
 
 -- -----------------------------------------------------------------------------
--- 1. Table: admins (Portal Users: Admin, Certification Manager, Examiner)
+-- 1. Table: admins (Portal Users: Admin, Certification Manager, Examiner, Technical Coordinator)
 -- -----------------------------------------------------------------------------
 CREATE TABLE `admins` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(150) NOT NULL,
   `email` VARCHAR(191) NOT NULL,
   `password_hash` VARCHAR(255) NOT NULL,
-  `role` ENUM('admin', 'certification_manager', 'examiner') NOT NULL DEFAULT 'examiner',
+  `role` ENUM('admin', 'certification_manager', 'examiner', 'technical_coordinator') NOT NULL DEFAULT 'examiner',
   `is_active` TINYINT(1) NOT NULL DEFAULT 1,
   `photo` VARCHAR(255) NULL DEFAULT NULL,
   `created_by` INT UNSIGNED NULL DEFAULT NULL,
@@ -177,7 +177,8 @@ SET FOREIGN_KEY_CHECKS = 1;
 INSERT INTO `admins` (`id`, `name`, `email`, `password_hash`, `role`, `is_active`) VALUES
   (1, 'System Administrator', 'admin@gmail.com', '$2a$10$Hlm/Nllaf8/7F3VZlpPBnOKwGDj9dRkgDIFrC/WtTCMhYGuB25.7e', 'admin', 1),
   (2, 'Certification Manager', 'manager@emisafe.ae', '$2a$10$Hlm/Nllaf8/7F3VZlpPBnOKwGDj9dRkgDIFrC/WtTCMhYGuB25.7e', 'certification_manager', 1),
-  (3, 'Examiner', 'examiner@emisafe.ae', '$2a$10$Hlm/Nllaf8/7F3VZlpPBnOKwGDj9dRkgDIFrC/WtTCMhYGuB25.7e', 'examiner', 1);
+  (3, 'Examiner', 'examiner@emisafe.ae', '$2a$10$Hlm/Nllaf8/7F3VZlpPBnOKwGDj9dRkgDIFrC/WtTCMhYGuB25.7e', 'examiner', 1),
+  (4, 'Technical Coordinator', 'coordinator@emisafe.ae', '$2a$10$Hlm/Nllaf8/7F3VZlpPBnOKwGDj9dRkgDIFrC/WtTCMhYGuB25.7e', 'technical_coordinator', 1);
 
 -- -----------------------------------------------------------------------------
 -- 7 Official EIAC Certification Scopes

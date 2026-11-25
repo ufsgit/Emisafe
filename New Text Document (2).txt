@@ -1,0 +1,57 @@
+Not employers these certificates are for the candidates training under emisafe. 
+
+Photo, Passport and other id proofs if necessary, candidates should be able to add. Ps: candidates should e able to upload multiple docs
+
+ There is an Exam for competent personnel like for the public. 
+ 
+ last 3 digits emirates id and first 7 digits only should be visible on the certificate. (Emirates no)
+
+ISSUE CERTIFICATE 
+Job title remove, 
+certification scope instead of type,
+ one more field below certificate type(scope): “accreditation status” ( eiac or non-eiac).,
+ not examination status it’s certification status (pass, failed, expired), description and scope not required.  
+Out of the scopes 7 scopes will be defined (not received yet from the client for now make a provision only for the admin to add scopes which will appear on the dropdown menu for scope) but the 8th one will be "other" and manual input for the candidates
+Certificate number - manual. No generate option.
+Remove description and scope
+(certificate number) WOR-yy/xxxx/dd/mm-xx-Cx.  x- manual input 
+Status: pass, fail, withdrawn, withheld
+Emirates id search and fetch candidate name
+After clicking issue certificate; one file will be pdf and other will be like an id card (haven't specified the format yet)
+Candidate photo mandatory. keep a place for uploading picture for all the users.
+
+ADD EMPLOYEE (change to add candidate):
+Email not mandatory, designation optional,
+Nationality not mandatory
+Phone no. also not mandatory
+DOB not mandatory
+candidate previous company should be visible.
+Change of company by the candidate, then both of the certificate should be visible
+Each candidate can have multiple certificates under multiple companies
+
+ADD Company name wherever required
+
+ADD CERTIFICATE TYPE:
+Instead of name, scope, category not needed, in scope if selected "other" then manual input box should come which can take the place of scope in this page.
+Accreditation status- dropdown EIAC and non-EIAC
+if EIAC- scope (dropdwn  7 options) 
+non-EIAC- 1 manual fill (other)
+
+admin should be able to create, activate and deactivate users - permanent user creation
+
+login timestamps separate tab for all the users including admins
+
+Admin-certification manager- examiner
+
+manager should be able to approve certificates (in dashboard like expiring soon certificates, there can be a view all button navigating to that tab, other than that only the certification manager can approve not even admin but keep the privilages of admin to even deactivate certification manager)
+
+
+QR code should be able to analyse in camera app itself (for ex: if i have a physical certificate with the qr on it i should be able to scan it from my phone camera app and that should navigate to the certificate)
+
+Printout date should be added on cert
+
+
+
+
+
+

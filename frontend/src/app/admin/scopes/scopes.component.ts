@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { CertificateTypeService, CertificateType } from '../../core/services/certificate-type.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 
 @Component({
@@ -15,6 +16,7 @@ import { ToastService } from '../../core/services/toast.service';
 export class ScopesComponent implements OnInit {
   private typeService = inject(CertificateTypeService);
   private toast = inject(ToastService);
+  public auth = inject(AuthService);
 
   public scopes = signal<CertificateType[]>([]);
   public search = '';
@@ -132,6 +134,7 @@ export class ScopesComponent implements OnInit {
   }
 
   openEditModal(ct: CertificateType): void {
+    if (!this.auth.canModifyRecords()) return;
     this.isEditing.set(true);
     this.modalError.set('');
     const acc = ct.accreditation_status || 'EIAC';
@@ -218,6 +221,7 @@ export class ScopesComponent implements OnInit {
   }
 
   confirmToggleStatus(ct: CertificateType): void {
+    if (!this.auth.canModifyRecords()) return;
     this.selectedScope.set(ct);
     this.showConfirmModal.set(true);
   }

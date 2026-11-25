@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard } from './core/guards/auth.guard';
+import { authGuard, adminGuard, guestGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   // 1. Public Verification Page (Server-Side Rendered on "/")
@@ -66,7 +66,8 @@ export const routes: Routes = [
       },
       {
         path: 'certificate-format',
-        loadComponent: () => import('./admin/certificate-format/certificate-format.component').then(m => m.CertificateFormatComponent)
+        loadComponent: () => import('./admin/certificate-format/certificate-format.component').then(m => m.CertificateFormatComponent),
+        canActivate: [adminGuard]
       },
       {
         path: 'reports',
@@ -74,11 +75,13 @@ export const routes: Routes = [
       },
       {
         path: 'users',
-        loadComponent: () => import('./admin/users/users.component').then(m => m.UsersComponent)
+        loadComponent: () => import('./admin/users/users.component').then(m => m.UsersComponent),
+        canActivate: [adminGuard]
       },
       {
         path: 'login-history',
-        loadComponent: () => import('./admin/login-history/login-history.component').then(m => m.LoginHistoryComponent)
+        loadComponent: () => import('./admin/login-history/login-history.component').then(m => m.LoginHistoryComponent),
+        canActivate: [adminGuard]
       }
     ]
   },

@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { normalizePaginated, PaginatedList } from '../utils/paginated';
 
-export type AppRole = 'admin' | 'certification_manager' | 'examiner';
+export type AppRole = 'admin' | 'certification_manager' | 'examiner' | 'technical_coordinator';
 
 export interface AppUser {
   id: number;

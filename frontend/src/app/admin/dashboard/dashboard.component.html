@@ -13,10 +13,17 @@
         <span class="material-symbols-outlined">analytics</span>
         Reports
       </a>
-      <a routerLink="/admin/certificates" class="btn btn-primary btn-sm">
-        <span class="material-symbols-outlined">add</span>
-        Issue Certificate
-      </a>
+      @if (auth.canManageCertificates()) {
+        <a routerLink="/admin/certificates" class="btn btn-primary btn-sm">
+          <span class="material-symbols-outlined">add</span>
+          Issue Certificate
+        </a>
+      } @else {
+        <a routerLink="/admin/candidates" class="btn btn-primary btn-sm">
+          <span class="material-symbols-outlined">person_add</span>
+          Add Candidate
+        </a>
+      }
     </div>
   </div>
 

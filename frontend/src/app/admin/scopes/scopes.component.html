@@ -41,7 +41,9 @@
           <th>Scope</th>
           <th>Accreditation</th>
           <th>Status</th>
+          @if (auth.canModifyRecords()) {
           <th>Actions</th>
+          }
         </tr>
       </thead>
       <tbody>
@@ -60,6 +62,7 @@
               {{ ct.is_active ? 'Active' : 'Inactive' }}
             </span>
           </td>
+          @if (auth.canModifyRecords()) {
           <td>
             <div class="action-buttons">
               <button type="button" class="action-btn" (click)="openEditModal(ct)" title="Edit">
@@ -74,6 +77,7 @@
               </button>
             </div>
           </td>
+          }
         </tr>
         }
       </tbody>

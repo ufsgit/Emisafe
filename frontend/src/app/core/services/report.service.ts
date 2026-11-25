@@ -49,10 +49,11 @@ export class ReportService {
   private http = inject(HttpClient);
   private baseUrl = inject(API_BASE_URL);
 
-  getEmployeeWiseReport(query?: { page?: number; limit?: number }): Observable<ReportListResponse<EmployeeReportRow>> {
+  getEmployeeWiseReport(query?: { page?: number; limit?: number; search?: string }): Observable<ReportListResponse<EmployeeReportRow>> {
     let params = new HttpParams();
     if (query?.page) params = params.set('page', query.page.toString());
     if (query?.limit) params = params.set('limit', query.limit.toString());
+    if (query?.search?.trim()) params = params.set('search', query.search.trim());
 
     return this.http.get<ReportListResponse<EmployeeReportRow>>('/api/reports/employee-wise', { params });
   }
@@ -65,8 +66,9 @@ export class ReportService {
     return this.http.get<ReportListResponse<TypeReportRow>>('/api/reports/type-wise', { params });
   }
 
-  downloadEmployeeWiseCsv() {
-    window.open(`${this.baseUrl}/reports/employee-wise?format=csv`, '_blank');
+  downloadEmployeeWiseCsv(search?: string) {
+    const searchParam = search?.trim() ? `&search=${encodeURIComponent(search.trim())}` : '';
+    window.open(`${this.baseUrl}/reports/employee-wise?format=csv${searchParam}`, '_blank');
   }
 
   downloadTypeWiseCsv() {

@@ -42,7 +42,8 @@ export class UsersComponent implements OnInit {
   public roles = [
     { value: 'admin', label: 'Administrator' },
     { value: 'certification_manager', label: 'Certification Manager' },
-    { value: 'examiner', label: 'Examiner' }
+    { value: 'examiner', label: 'Examiner' },
+    { value: 'technical_coordinator', label: 'Technical Coordinator' }
   ];
 
   public photoPreview = signal<string>('');

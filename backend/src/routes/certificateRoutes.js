@@ -44,22 +44,24 @@ const certValidationRules = [
   handleValidationErrors
 ];
 
+const CERT_WRITE_ROLES = ['admin', 'certification_manager', 'examiner'];
+
 router.get('/', certificateController.listCertificates);
 router.get('/format', certificateController.getCertificateFormat);
 router.post('/format', requireRole('admin'), certificateController.uploadCertificateFormat);
 router.delete('/format', requireRole('admin'), certificateController.deleteCertificateFormat);
 // NOTE: next-number must be registered BEFORE '/:id'
-router.get('/next-number', certificateController.getNextCertificateNumber);
+router.get('/next-number', requireRole(...CERT_WRITE_ROLES), certificateController.getNextCertificateNumber);
 router.get('/:id', [param('id').isInt().withMessage('Valid certificate ID required.'), handleValidationErrors], certificateController.getCertificateById);
-router.post('/', certValidationRules, certificateController.createCertificate);
-router.put('/:id', [param('id').isInt().withMessage('Valid certificate ID required.'), ...certValidationRules], certificateController.updateCertificate);
-// Only certification managers may approve — admin is explicitly NOT allowed
+router.post('/', requireRole(...CERT_WRITE_ROLES), certValidationRules, certificateController.createCertificate);
+router.put('/:id', requireRole(...CERT_WRITE_ROLES), [param('id').isInt().withMessage('Valid certificate ID required.'), ...certValidationRules], certificateController.updateCertificate);
+// Only certification managers may approve — admin and others are explicitly NOT allowed
 router.patch(
   '/:id/approve',
   requireRole('certification_manager'),
   [param('id').isInt().withMessage('Valid certificate ID required.'), handleValidationErrors],
   certificateController.approveCertificate
 );
-router.delete('/:id', [param('id').isInt().withMessage('Valid certificate ID required.'), handleValidationErrors], certificateController.deleteCertificate);
+router.delete('/:id', requireRole(...CERT_WRITE_ROLES), [param('id').isInt().withMessage('Valid certificate ID required.'), handleValidationErrors], certificateController.deleteCertificate);
 
 module.exports = router;
