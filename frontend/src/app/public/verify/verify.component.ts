@@ -51,9 +51,13 @@ export class VerifyComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.setTitleAndMeta('EmiSafe | Verify a Certificate', 'Official EmiSafe public portal to verify candidate workplace safety certificates and credentials.');
 
-    // Support shareable links via query parameter: /?certificate=CERT-NUMBER
+    // Support shareable links via hash query parameter: /#/?certificate=CERT-NUMBER
+    // (also falls back to window.location.search for any legacy /?certificate= QR codes)
     this.route.queryParamMap.subscribe(params => {
-      const certParam = params.get('certificate');
+      let certParam = params.get('certificate');
+      if (!certParam && isPlatformBrowser(this.platformId) && typeof window !== 'undefined') {
+        certParam = new URLSearchParams(window.location.search).get('certificate');
+      }
       if (certParam && certParam.trim()) {
         const cleanParam = certParam.trim();
         this.searchQuery = cleanParam;
@@ -158,8 +162,8 @@ export class VerifyComponent implements OnInit, OnDestroy {
   private generateQrCode(certNumber: string): void {
     const origin = isPlatformBrowser(this.platformId) && typeof window !== 'undefined'
       ? window.location.origin
-      : 'http://localhost:4000';
-    const verifyUrl = `${origin}/?certificate=${encodeURIComponent(certNumber)}`;
+      : '';
+    const verifyUrl = `${origin}/#/?certificate=${encodeURIComponent(certNumber)}`;
     this.currentVerifyUrl.set(verifyUrl);
 
     import('qrcode').then(({ default: QRCode }) => {

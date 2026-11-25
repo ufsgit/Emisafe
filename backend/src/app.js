@@ -18,6 +18,9 @@ const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
+// Respect X-Forwarded-* headers behind Nginx/reverse proxy (HTTPS & client IP)
+app.set('trust proxy', 1);
+
 // Security headers
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
@@ -28,10 +31,17 @@ app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps, curl, SSR server)
     if (!origin) return callback(null, true);
-    if (config.CORS_ORIGIN.indexOf(origin) !== -1 || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    const normalizedOrigin = origin.replace(/\/+$/, '');
+    if (config.CORS_ORIGIN.includes(normalizedOrigin)) {
       return callback(null, true);
     }
-    return callback(null, true); // Permissive for local dev & SSR
+    if (
+      config.NODE_ENV !== 'production' &&
+      (normalizedOrigin.includes('localhost') || normalizedOrigin.includes('127.0.0.1'))
+    ) {
+      return callback(null, true);
+    }
+    return callback(new Error(`Origin '${origin}' not allowed by CORS`));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

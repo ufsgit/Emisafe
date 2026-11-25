@@ -70,11 +70,12 @@ async function login(req, res, next) {
       console.error('[auth] failed to record login history:', historyError.message);
     }
 
-    // Set HttpOnly, SameSite cookie
+    // Set HttpOnly cookie (SameSite=None + Secure in production for cross-subdomain requests)
+    const isProd = config.NODE_ENV === 'production';
     res.cookie('token', token, {
       httpOnly: true,
-      secure: config.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
@@ -101,10 +102,11 @@ async function login(req, res, next) {
 }
 
 async function logout(req, res) {
+  const isProd = config.NODE_ENV === 'production';
   res.clearCookie('token', {
     httpOnly: true,
-    sameSite: 'lax',
-    secure: config.NODE_ENV === 'production'
+    sameSite: isProd ? 'none' : 'lax',
+    secure: isProd
   });
   return res.json({
     success: true,

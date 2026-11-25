@@ -41,7 +41,7 @@ export function buildVerifyUrl(certNumber: string): string {
     typeof window !== 'undefined' && window.location?.origin
       ? window.location.origin
       : '';
-  return `${origin}/?certificate=${encodeURIComponent(certNumber)}`;
+  return `${origin}/#/?certificate=${encodeURIComponent(certNumber)}`;
 }
 
 /** QR data URL for the verification URL (browser only). */
